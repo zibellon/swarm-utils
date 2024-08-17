@@ -1,0 +1,146 @@
+# SwarmUtils
+Один контейнер с утилитами для обслуживания кластера DOCKER-SWARM
+
+# Основные функции
+1. backup
+   1. Резервное копирование
+   2. Загрузка копий на S3 хранилище (Через offen-backup)
+   3. Запуск: CRON / API
+2. clean
+   1. Очистка кластера
+   2. Удалить все EXITED/STOPPED/COMPLETED containers: docker container prune -f
+   3. Удаление ненужных images: docker image prune -f -a
+   4. Очистка кэша билдера: docker builder prune -f
+   5. Запуск: CRON / API
+3. update
+   1. Перезапуск (Обновление) сервисов. Через команду docker service update SERVICE_NAME
+   2. Можно указать: token, service, image?
+   3. token, service - обязательный параметр
+   4. Запуск: API
+
+# Особенности и как работает
+1. Бэкап и очистку - можно запустить по API
+2. Бэкап name: nodeName_volumeName_date
+3. Бэкап + Очистка идут по одной кроне
+   1. CLEAN
+   2. BACKUP
+
+# ENV_LIST
+2. SWARM_UTILS_IS_CRON_BACKUP=true
+   1. Делать бэкап по кроне
+3. SWARM_UTILS_IS_CRON_CLEAN=true
+   1. Производить чистку кластера по кроне
+4. SWARM_UTILS_CRON_EXPR=* * * * *
+   1. Интервал работы кроны (Cron string)
+5. SWARM_UTILS_ADMIN_TOKEN_LIST=tokenA,tokenB,tokenC,
+   1. Список из токенов, которае имею админ-права
+6. SWARM_UTILS_DOCKER_CLI_VERSION=25.0.5-cli-alpine3.20
+   1. Версия docker-cli контейнера, который будет запускаться на каждой `NODE`
+7. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+   1. Доменное имя где находится облако S3
+8. SWARM_UTILS_S3_HTTPS=true
+   1. Использовать HTTPS или нет
+   2. Если нет - подключение будет идти через http://
+9.  SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+   1.  Название игслуе - куда заливать бэкап
+10. SWARM_UTILS_S3_ACCESS_KEY=...
+    1.  Ключ для доступа к S3
+11. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+    1.  Секрет для доступа к S3
+12. SWARM_UTILS_REGISTRY_USER=root
+   1.  Имя пользователя, для доступа к регистри
+13. SWARM_UTILS_REGISTRY_PASSWORD=...
+    1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
+14. SWARM_UTILS_REGISTRY_URL=domain.com
+    1.  url регистри. Обязательно используется HTTPS
+
+# Основные labels
+1. swarm-utils.clean
+   1. exec
+   2. token
+2. swarm-utils.backup
+   1. exec-pre
+   2. exec
+   3. exec-post
+   4. stop=true/false
+   5. volume-list=volume1,volume2,volume3,...
+   6. token
+3. swarm-utils.update
+   1. token
+
+# Права доступа по API - првоеряется через query "token"
+1. Админы - список токенов указан через ENV `SWARM_UTILS_ADMIN_TOKEN_LIST`
+   1. Могут делать ВСЕ
+   2. Не зависят от docker.labels.token
+2. Все остальные пользователи
+   1. Могут делать ВСЕ
+   2. Зависят от docker.labels.token
+   3. Работают только с теми контейнерами, к которым у них есть доступ
+
+# Конкурентность
+1. Clean. Mutex: clean_node_service
+   1. all. (for loop nodeList) (Cron/API)
+   2. specific-node (API)
+   3. specific-service (API)
+2. Backup. Mutex: backup_service
+   1. all. (for loop services) (Cron/API)
+   2. specific-service (API)
+3. Update. Mutex: update_service
+   1. specific-service (API)
+
+## Конкурентность. Mutex-timing. Добавить в ENV
+1. Время на блокиррку - 2 секунду
+2. Время на выполнение - 10 минут
+3. Общее время - 10 минут 10 секунд
+
+## Конкурентность. В чем идея
+1. Приходит два запроса через API на update, service=service_a
+2. Прежде чем выполнить команду - ставится AsyncLock с ключем: update_service_a
+3. Один из запрсоов - сможет поставить LOCK и начать процесс обновления
+4. Второй из запросов - вывалится с ошибкой, так как не сможет поставить LOCK
+
+# Основные команды докера
+1. docker node ls --format json
+2. docker volume ls -f driver=local --format json
+3. docker service ls --filter label="LABEL" --format json
+   1. Получение списка сервисов
+4. docker service ps SERVICE_NAME --format json
+   1. Получение списка TASKS
+   2. taskId = .ID (380xcsrylpmc0wvl5ntd3xfa5)
+   3. taskName = .Name (nginx_master.2)
+   4. taskNode = .Node (internal-manager-1) (hostname)
+5. docker inspect TASK_ID --format json
+   1. Чтобы получить id контейнера - нужно проинспектировать task
+   2. containerId = .[0].Status.ContainerStatus.ContainerID
+6. docker inspect SERVICE_ID --format json
+7. docker service ps SERVICE_NAME --filter 'desired-state=running' --format json
+8. Команда, для запуска внутри контейнера: docker exec CONTAINER_ID /bin/sh -c 'LABEL_STRING'
+9.  docker service ls --filter label="docker-backuper.volume-list" --format json
+10. docker service ls --filter mode=replicated --filter label="docker-backuper.stop=true" --format json
+11. docker service scale SERVICE_NAME=123
+   1. docker service scale SERVICE_NAME=0
+12. docker service logs SERVICE_NAME
+13. docker service remove SERVICE_NAME
+14. docker inspect --type
+    1.  container|image|node|network|secret|service|volume|task|plugin
+
+# Дополнительные идеи
+1. Сделать метод, для переноса docker-volumes между серверами
+   1. Нужно перенести Minio с сервера A -> на сервер B
+2. В момент update добавить
+   1. .update.exec-pre
+   2. .update.exec-post
+3. Добавить работу с sqlite
+   1. запись состояний
+   2. Какие команды запустились и ТД
+   3. На случай - падения сервиса
+4. Добавить node.labels.token-list
+   1. Чтобы можно было по АПИ дергать Clean на Node
+5. Добавить работу с registry - через API
+   1. МБ будут контейнеры, из разных регистри, с разными CREDS
+
+---
+
+Backup - все в одном цикле. Снача pre, stop/exec, offen-backup, restore(if stop), post
+
+Работа ведётся со списком сервисов - которые были получены вначале! Исполбзовать Map
