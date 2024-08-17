@@ -3,8 +3,13 @@ import { bashExec } from './utils-bash';
 //---------
 //docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
 //---------
-export async function dockerLogin(user: string, password: string, registryUrl: string) {
-  return await bashExec(`docker login -u ${user} -p ${password} ${registryUrl}`);
+export type DockerLoginParams = {
+  user: string;
+  password: string;
+  registryUrl: string;
+};
+export async function dockerLogin(params: DockerLoginParams) {
+  return await bashExec(`docker login -u ${params.user} -p ${params.password} ${params.registryUrl}`);
 }
 
 //---------
@@ -21,15 +26,15 @@ export type DockerNodeLsItem = {
   TLSStatus: string; // 'Ready'
 };
 export type DockerNodeLsFilter = {
-  id?: string;
-  label?: string;
-  nodeLabel?: string; // node.label
-  membership?: string;
-  name?: string;
-  role?: string;
+  key: 'id' | 'label' | 'node.label' | 'membership' | 'name' | 'role';
+  value: string;
 };
-export async function dockerNodeLs(filter: DockerNodeLsFilter = {}): Promise<DockerNodeLsItem[]> {
-  const result = await bashExec(`docker node ls --format json`);
+export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []): Promise<DockerNodeLsItem[]> {
+  let exec = `docker node ls --format json`;
+  for (const filter of filterList) {
+    exec += ` --filter ${filter.key}=${filter.value}`;
+  }
+  const result = await bashExec(exec);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -52,13 +57,15 @@ export type DockerVolumeLsItem = {
   Status: string; // 'N/A'
 };
 export type DockerVolumeLsFilter = {
-  dangling?: boolean; // (Boolean - true or false, 0 or 1)
-  driver?: string; // (a volume driver's name)
-  label?: string; // label=<key> or label=<key>=<value>
-  name?: string; // (a volume's name)
+  key: 'dangling' | 'driver' | 'label' | 'name';
+  value: string;
 };
-export async function dockerVolumeLs(filter: DockerVolumeLsFilter = {}): Promise<DockerVolumeLsItem[]> {
-  const result = await bashExec(`docker volume ls --format json`);
+export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []): Promise<DockerVolumeLsItem[]> {
+  let exec = `docker volume ls --format json`;
+  for (const filter of filterList) {
+    exec += ` --filter ${filter.key}=${filter.value}`;
+  }
+  const result = await bashExec(exec);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -107,16 +114,18 @@ export type DockerServicePsItem = {
   Ports: string; // ''
 };
 export type DockerServicePsFilter = {
-  id?: string;
-  name?: string;
-  node?: string;
-  'desired-state'?: string;
+  key: 'id' | 'name' | 'node' | 'desired-state';
+  value: string;
 };
 export async function dockerServicePs(
   service: string,
-  filter: DockerServicePsFilter = {}
+  filterList: DockerServicePsFilter[] = []
 ): Promise<DockerServicePsItem[]> {
-  const result = await bashExec(`docker service ps ${service} --format json`);
+  let exec = `docker service ps ${service} --format json`;
+  for (const filter of filterList) {
+    exec += ` --filter ${filter.key}=${filter.value}`;
+  }
+  const result = await bashExec(exec);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)

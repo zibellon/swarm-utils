@@ -36,11 +36,11 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
 
   // Если нужна авторизация (Передается через query)
   if (params.registryAuth === true && registryIsCanAuth()) {
-    await dockerLogin(
-      getProcessEnv().SWARM_UTILS_REGISTRY_USER,
-      getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD,
-      getProcessEnv().SWARM_UTILS_REGISTRY_URL
-    );
+    await dockerLogin({
+      user: getProcessEnv().SWARM_UTILS_REGISTRY_USER,
+      password: getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD,
+      registryUrl: getProcessEnv().SWARM_UTILS_REGISTRY_URL,
+    });
     registryAuth = true;
   }
 
