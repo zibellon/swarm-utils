@@ -1,4 +1,4 @@
-import { dockerLogin, dockerServiceLs, DockerServiceLsFilter, dockerServiceUpdate } from 'src/utils-docker';
+import { dockerLogin, dockerServiceLs, DockerServiceLsFilter, dockerServiceUpdate } from 'src/utils-docker-api';
 import { getProcessEnv } from 'src/utils-env-config';
 import { registryIsCanAuth } from 'src/utils-registry';
 import { tokenIsAdmin } from 'src/utils-token';

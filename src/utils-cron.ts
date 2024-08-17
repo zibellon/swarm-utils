@@ -1,6 +1,6 @@
 import { CronJob } from "cron";
 import { getProcessEnv } from "./utils-env-config";
-import { dockerNodeLs } from "./utils-docker";
+import { dockerNodeLs } from "./utils-docker-api";
 
 let isCronProgress = false;
 
