@@ -36,22 +36,28 @@
    1. Список из токенов, которае имею админ-права
 6. SWARM_UTILS_DOCKER_CLI_VERSION=25.0.5-cli-alpine3.20
    1. Версия docker-cli контейнера, который будет запускаться на каждой `NODE`
-7. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
-   1. Доменное имя где находится облако S3
-8. SWARM_UTILS_S3_HTTPS=true
-   1. Использовать HTTPS или нет
-   2. Если нет - подключение будет идти через http://
-9.  SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
-   1.  Название игслуе - куда заливать бэкап
-10. SWARM_UTILS_S3_ACCESS_KEY=...
+7. SWARM_UTILS_LOCK_TIMEOUT=10_000
+   1. 10 секунд - сколько времени на уствновку блокировки
+8. SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME=630_000
+   1. 10 минут 30 сек - сколько суммарно времени
+9.  SWARM_UTILS_LOCK_MAX_EXECUTION_TIME=600_000
+    1.  10 минут - сколько может выполняться BASH script
+10. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+    1.  Доменное имя где находится облако S3
+11. SWARM_UTILS_S3_HTTPS=true
+    1.  Использовать HTTPS или нет
+    2.  Если нет - подключение будет идти через http://
+12. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+    1.  Название игслуе - куда заливать бэкап
+13. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-11. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+14. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-12. SWARM_UTILS_REGISTRY_USER=root
-   1.  Имя пользователя, для доступа к регистри
-13. SWARM_UTILS_REGISTRY_PASSWORD=...
+15. SWARM_UTILS_REGISTRY_USER=root
+    1.  Имя пользователя, для доступа к регистри
+16. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-14. SWARM_UTILS_REGISTRY_URL=domain.com
+17. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Основные labels

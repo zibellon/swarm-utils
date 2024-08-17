@@ -8,6 +8,10 @@ class ProcessENV {
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_VERSION = '25.0.5-cli-alpine3.20'; // Версия docker-cli контейнера, который будет запускаться на каждой NODE
 
+  public SWARM_UTILS_LOCK_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
+  public SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME = 630_000; // 10 минут 30 сек - сколько суммарно времени
+  public SWARM_UTILS_LOCK_MAX_EXECUTION_TIME = 600_000; // 10 минут - сколько может выполняться BASH script
+
   // S3 (offen-backup)
   public SWARM_UTILS_S3_DOMAIN = 's3-api.domain.com'; // Доменное имя где находится облако S3
   public SWARM_UTILS_S3_HTTPS = true; // Использовать HTTPS или нет. Если нет - подключение будет идти через http://
@@ -45,6 +49,17 @@ export function getProcessEnv(): ProcessENV {
     }
     if (typeof process.env.SWARM_UTILS_DOCKER_CLI_VERSION === 'string') {
       processENV.SWARM_UTILS_DOCKER_CLI_VERSION = process.env.SWARM_UTILS_DOCKER_CLI_VERSION;
+    }
+
+    // LOCK
+    if (typeof process.env.SWARM_UTILS_LOCK_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_LOCK_TIMEOUT = Number(process.env.SWARM_UTILS_LOCK_TIMEOUT);
+    }
+    if (typeof process.env.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME === 'string') {
+      processENV.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME = Number(process.env.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME);
+    }
+    if (typeof process.env.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME === 'string') {
+      processENV.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME = Number(process.env.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME);
     }
 
     //S3

@@ -161,8 +161,8 @@ export async function dockerServiceScale(service: string, replicas: number) {
 //---------
 //docker service rm ${SERVICE_NAME}
 //---------
-export async function dockerServiceRm(service: string) {
-  return await bashExec(`docker service rm ${service}`);
+export async function dockerServiceRemove(service: string) {
+  return await bashExec(`docker service remove ${service}`);
 }
 
 //---------
@@ -174,6 +174,51 @@ export async function dockerServiceLogs(serviceIdOrTaskId: string): Promise<any[
     .split('\n')
     .filter((el) => el.length > 0)
     .map((el) => JSON.parse(el));
+}
+
+//---------
+//docker service create ${serviceIdOrTaskId} --raw
+//---------
+export type DockerServiceCreateParams = {
+  name: string;
+  mode: string;
+  replicas?: number;
+  constraint: string; // node.hostname==$taskNode
+  'restart-condition': string; // none
+  detach: boolean;
+  mountList: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
+  image: string; // docker:25.0.5-cli-alpine3.20
+  execShell?: 'sh' | 'bash';
+  execCommand?: string;
+};
+export async function dockerServiceCreate(params: DockerServiceCreateParams) {
+  let exec = `docker service create`;
+
+  if (params.detach === true) {
+    exec += ` --detach`;
+  }
+
+  exec += ` --name ${params.name}`;
+  exec += ` --mode ${params.mode}`;
+
+  if (typeof params.replicas === 'number' && params.replicas > 0) {
+    exec += ` --replicas ${params.replicas}`;
+  }
+
+  exec += ` --constraint ${params.constraint}`;
+  exec += ` --restart-condition ${params['restart-condition']}`;
+
+  for (const mount of params.mountList) {
+    exec += ` --mount ${mount}`;
+  }
+
+  exec += ` ${params.image}`;
+
+  if (typeof params.execShell === 'string' && typeof params.execCommand === 'string') {
+    exec += ` ${params.execShell} -c "${params.execCommand}"`;
+  }
+
+  return await bashExec(exec);
 }
 
 //---------
