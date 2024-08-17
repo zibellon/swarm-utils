@@ -1,6 +1,8 @@
-import { CronJob } from "cron";
-import { getProcessEnv } from "./utils-env-config";
-import { dockerNodeLs } from "./utils-docker-api";
+import { CronJob } from 'cron';
+import { getProcessEnv } from './utils-env-config';
+import { dockerNodeLs } from './utils-docker-api';
+import { lockResource } from './utils-lock';
+import { logError } from './utils-logger';
 
 let isCronProgress = false;
 
@@ -10,9 +12,6 @@ export async function initCron() {
 
     if (isCronProgress === false) {
       isCronProgress = true;
-
-
-
     }
   });
 
@@ -39,17 +38,26 @@ export async function initCron() {
 // docker service remove $execServiceName
 
 async function cronCleanProgress(dateCron: Date) {
-
   // Очистка Node
   const nodeList = await dockerNodeLs();
-
   for (const node of nodeList) {
-    
+    await lockResource
+      .acquire(`clean_node_${node.Hostname}`, async () => {
+        // Получение контейнера - для очистки этой NODE
+        // docker service ls --filter name=...
+        // docker service ps -> Status.State=running
+        // Если
+        // Запуск контейнера для очистки
+        //
+      })
+      .catch((err) => {
+        logError('cronCleanProgress.for.nodeList.ERR', err, {
+          ...node,
+        });
+      });
   }
 
-
+  // Очистка Containers (Example: registry-clean)
 }
 
-async function cronBackupProgress(dateCron: Date) {
-  
-}
+async function cronBackupProgress(dateCron: Date) {}

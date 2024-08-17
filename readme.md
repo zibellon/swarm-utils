@@ -62,15 +62,15 @@
 
 # Основные labels
 1. swarm-utils.clean
-   1. exec
-   2. token
-2. swarm-utils.backup
-   1. exec-pre
+   1. enable=true/false
    2. exec
-   3. exec-post
-   4. stop=true/false
-   5. volume-list=volume1,volume2,volume3,...
-   6. token
+   3. token
+2. swarm-utils.backup
+   1. enable=true/false
+   2. exec
+   3. stop=true/false
+   4. volume-list=volume1,volume2,volume3,...
+   5. token
 3. swarm-utils.update
    1. token
 

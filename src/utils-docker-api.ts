@@ -8,8 +8,12 @@ export type DockerLoginParams = {
   password: string;
   registryUrl: string;
 };
+export function dockerLoginCmd(params: DockerLoginParams) {
+  return `docker login -u ${params.user} -p ${params.password} ${params.registryUrl}`;
+}
 export async function dockerLogin(params: DockerLoginParams) {
-  return await bashExec(`docker login -u ${params.user} -p ${params.password} ${params.registryUrl}`);
+  const cmd = dockerLoginCmd(params);
+  return await bashExec(cmd);
 }
 
 //---------
@@ -29,12 +33,16 @@ export type DockerNodeLsFilter = {
   key: 'id' | 'label' | 'node.label' | 'membership' | 'name' | 'role';
   value: string;
 };
-export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []): Promise<DockerNodeLsItem[]> {
-  let exec = `docker node ls --format json`;
+export function dockerNodeLsCmd(filterList: DockerNodeLsFilter[] = []) {
+  let cmd = `docker node ls --format json`;
   for (const filter of filterList) {
-    exec += ` --filter ${filter.key}=${filter.value}`;
+    cmd += ` --filter ${filter.key}=${filter.value}`;
   }
-  const result = await bashExec(exec);
+  return cmd;
+}
+export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []): Promise<DockerNodeLsItem[]> {
+  const cmd = dockerNodeLsCmd(filterList);
+  const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -60,12 +68,16 @@ export type DockerVolumeLsFilter = {
   key: 'dangling' | 'driver' | 'label' | 'name';
   value: string;
 };
-export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []): Promise<DockerVolumeLsItem[]> {
-  let exec = `docker volume ls --format json`;
+export function dockerVolumeLsCmd(filterList: DockerVolumeLsFilter[] = []) {
+  let cmd = `docker volume ls --format json`;
   for (const filter of filterList) {
-    exec += ` --filter ${filter.key}=${filter.value}`;
+    cmd += ` --filter ${filter.key}=${filter.value}`;
   }
-  const result = await bashExec(exec);
+  return cmd;
+}
+export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []): Promise<DockerVolumeLsItem[]> {
+  const cmd = dockerVolumeLsCmd(filterList);
+  const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -87,12 +99,16 @@ export type DockerServiceLsFilter = {
   key: 'id' | 'label' | 'mode' | 'name';
   value: string;
 };
-export async function dockerServiceLs(filterList: DockerServiceLsFilter[] = []): Promise<DockerServiceLsItem[]> {
-  let exec = `docker service ls --format json`;
+export function dockerServiceLsCmd(filterList: DockerServiceLsFilter[] = []) {
+  let cmd = `docker service ls --format json`;
   for (const filter of filterList) {
-    exec += ` --filter ${filter.key}=${filter.value}`;
+    cmd += ` --filter ${filter.key}=${filter.value}`;
   }
-  const result = await bashExec(exec);
+  return cmd;
+}
+export async function dockerServiceLs(filterList: DockerServiceLsFilter[] = []): Promise<DockerServiceLsItem[]> {
+  const cmd = dockerServiceLsCmd(filterList);
+  const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -117,15 +133,19 @@ export type DockerServicePsFilter = {
   key: 'id' | 'name' | 'node' | 'desired-state';
   value: string;
 };
+export function dockerServicePsCmd(service: string, filterList: DockerServicePsFilter[] = []) {
+  let cmd = `docker service ps ${service} --format json`;
+  for (const filter of filterList) {
+    cmd += ` --filter ${filter.key}=${filter.value}`;
+  }
+  return cmd;
+}
 export async function dockerServicePs(
   service: string,
   filterList: DockerServicePsFilter[] = []
 ): Promise<DockerServicePsItem[]> {
-  let exec = `docker service ps ${service} --format json`;
-  for (const filter of filterList) {
-    exec += ` --filter ${filter.key}=${filter.value}`;
-  }
-  const result = await bashExec(exec);
+  const cmd = dockerServicePsCmd(service, filterList);
+  const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -140,36 +160,52 @@ export type DockerServiceUpdateParams = {
   registryAuth?: boolean;
   image?: string; // image-name:tag
 };
-export async function dockerServiceUpdate(service: string, params: DockerServiceUpdateParams = {}) {
-  let exec = `docker service update ${service} --force`;
+export function dockerServiceUpdateCmd(service: string, params: DockerServiceUpdateParams = {}) {
+  let cmd = `docker service update ${service} --force`;
   if (typeof params.registryAuth === 'boolean' && params.registryAuth === true) {
-    exec += ` --with-registry-auth`;
+    cmd += ` --with-registry-auth`;
   }
   if (typeof params.image === 'string' && params.image.length > 0) {
-    exec += ` --image=${params.image}`;
+    cmd += ` --image=${params.image}`;
   }
-  return await bashExec(exec);
+  return cmd;
+}
+export async function dockerServiceUpdate(service: string, params: DockerServiceUpdateParams = {}) {
+  const cmd = dockerServiceUpdateCmd(service, params);
+  return await bashExec(cmd);
 }
 
 //---------
 //docker service scale ${SERVICE_NAME}=${REPLICAS_COUNT}
 //---------
+export function dockerServiceScaleCmd(service: string, replicas: number) {
+  return `docker service scale ${service}=${replicas}`;
+}
 export async function dockerServiceScale(service: string, replicas: number) {
-  return await bashExec(`docker service scale ${service}=${replicas}`);
+  const cmd = dockerServiceScaleCmd(service, replicas);
+  return await bashExec(cmd);
 }
 
 //---------
 //docker service rm ${SERVICE_NAME}
 //---------
+export function dockerServiceRemoveCmd(service: string) {
+  return `docker service remove ${service}`;
+}
 export async function dockerServiceRemove(service: string) {
-  return await bashExec(`docker service remove ${service}`);
+  const cmd = dockerServiceRemoveCmd(service);
+  return await bashExec(cmd);
 }
 
 //---------
 //docker service logs ${serviceIdOrTaskId} --raw
 //---------
+export function dockerServiceLogsCmd(serviceIdOrTaskId: string) {
+  return `docker service logs ${serviceIdOrTaskId} --raw`;
+}
 export async function dockerServiceLogs(serviceIdOrTaskId: string): Promise<any[]> {
-  const result = await bashExec(`docker service logs ${serviceIdOrTaskId} --raw`);
+  const cmd = dockerServiceLogsCmd(serviceIdOrTaskId);
+  const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -177,7 +213,7 @@ export async function dockerServiceLogs(serviceIdOrTaskId: string): Promise<any[
 }
 
 //---------
-//docker service create ${serviceIdOrTaskId} --raw
+//docker service create ...
 //---------
 export type DockerServiceCreateParams = {
   name: string;
@@ -191,34 +227,30 @@ export type DockerServiceCreateParams = {
   execShell?: 'sh' | 'bash';
   execCommand?: string;
 };
-export async function dockerServiceCreate(params: DockerServiceCreateParams) {
-  let exec = `docker service create`;
-
+export function dockerServiceCreateCmd(params: DockerServiceCreateParams) {
+  let cmd = `docker service create`;
   if (params.detach === true) {
-    exec += ` --detach`;
+    cmd += ` --detach`;
   }
-
-  exec += ` --name ${params.name}`;
-  exec += ` --mode ${params.mode}`;
-
+  cmd += ` --name ${params.name}`;
+  cmd += ` --mode ${params.mode}`;
   if (typeof params.replicas === 'number' && params.replicas > 0) {
-    exec += ` --replicas ${params.replicas}`;
+    cmd += ` --replicas ${params.replicas}`;
   }
-
-  exec += ` --constraint ${params.constraint}`;
-  exec += ` --restart-condition ${params['restart-condition']}`;
-
+  cmd += ` --constraint ${params.constraint}`;
+  cmd += ` --restart-condition ${params['restart-condition']}`;
   for (const mount of params.mountList) {
-    exec += ` --mount ${mount}`;
+    cmd += ` --mount ${mount}`;
   }
-
-  exec += ` ${params.image}`;
-
+  cmd += ` ${params.image}`;
   if (typeof params.execShell === 'string' && typeof params.execCommand === 'string') {
-    exec += ` ${params.execShell} -c "${params.execCommand}"`;
+    cmd += ` ${params.execShell} -c "${params.execCommand}"`;
   }
-
-  return await bashExec(exec);
+  return cmd;
+}
+export async function dockerServiceCreate(params: DockerServiceCreateParams) {
+  const cmd = dockerServiceCreateCmd(params);
+  return await bashExec(cmd);
 }
 
 //---------
@@ -260,8 +292,12 @@ export type DockerInspectServiceItem = {
     Message: string; // 'update completed';
   };
 };
+export function dockerInspectServiceCmd(serviceId: string) {
+  return `docker inspect ${serviceId} --type service --format json`;
+}
 export async function dockerInspectService(serviceId: string): Promise<DockerInspectServiceItem | null> {
-  const result = await bashExec(`docker inspect ${serviceId} --type service --format json`);
+  const cmd = dockerInspectServiceCmd(serviceId);
+  const result = await bashExec(cmd);
   const mappedResultList = result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -306,8 +342,12 @@ export type DockerInspectTaskItem = {
   };
   DesiredState: string; // 'running'
 };
+export function dockerInspectTaskCmd(taskId: string) {
+  return `docker inspect ${taskId} --type task --format json`;
+}
 export async function dockerInspectTask(taskId: string): Promise<DockerInspectTaskItem | null> {
-  const result = await bashExec(`docker inspect ${taskId} --type task --format json`);
+  const cmd = dockerInspectTaskCmd(taskId);
+  const result = await bashExec(cmd);
   const mappedResultList = result.stdout
     .split('\n')
     .filter((el) => el.length > 0)

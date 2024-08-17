@@ -1,7 +1,7 @@
 import AsyncLock from 'async-lock';
 import { getProcessEnv } from './utils-env-config';
 
-export const resourceLock = new AsyncLock({
+export const lockResource = new AsyncLock({
   timeout: getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT,
   maxExecutionTime: getProcessEnv().SWARM_UTILS_LOCK_MAX_EXECUTION_TIME,
   maxOccupationTime: getProcessEnv().SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME,
