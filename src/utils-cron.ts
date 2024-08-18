@@ -1,8 +1,10 @@
 import { CronJob } from 'cron';
+import { dockerServiceGetStatusInfo } from './utils-docker';
+import { dockerNodeLs, dockerServiceRemove } from './utils-docker-api';
 import { getProcessEnv } from './utils-env-config';
-import { dockerNodeLs } from './utils-docker-api';
 import { lockResource } from './utils-lock';
 import { logError } from './utils-logger';
+import { nameCleanNode } from './utils-names';
 
 let isCronProgress = false;
 
@@ -41,14 +43,30 @@ async function cronCleanProgress(dateCron: Date) {
   // Очистка Node
   const nodeList = await dockerNodeLs();
   for (const node of nodeList) {
+    const lockKey = nameCleanNode(node.Hostname);
     await lockResource
-      .acquire(`clean_node_${node.Hostname}`, async () => {
-        // Получение контейнера - для очистки этой NODE
-        // docker service ls --filter name=...
-        // docker service ps -> Status.State=running
-        // Если
-        // Запуск контейнера для очистки
-        //
+      .acquire(lockKey, async () => {
+        const serviceName = nameCleanNode(node.Hostname);
+
+        // Вынести в общий метод - аля:
+
+        let canContinue = true;
+
+        const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
+        if (serviceStatusInfo.isExist) {
+          if (serviceStatusInfo.canRemove) {
+            // Сервис существует и его МОЖНО удалить
+            await dockerServiceRemove(serviceName);
+          } else {
+            canContinue = false;
+          }
+        }
+
+        // Запуск сервиса для очистки
+        // docker service create ...
+
+        // Дождаться пока завершится + Удалить сервис
+        // while .... 
       })
       .catch((err) => {
         logError('cronCleanProgress.for.nodeList.ERR', err, {
@@ -58,6 +76,7 @@ async function cronCleanProgress(dateCron: Date) {
   }
 
   // Очистка Containers (Example: registry-clean)
+  //...
 }
 
 async function cronBackupProgress(dateCron: Date) {}

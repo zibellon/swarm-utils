@@ -1,6 +1,6 @@
 import { spawnSync } from 'child_process';
-import { logError, logInfo, logWarn } from './utils-logger';
 import { throwErrorSimple } from './utils-error';
+import { logError, logInfo } from './utils-logger';
 
 export async function bashExec(inputCommand: string) {
   try {
@@ -12,6 +12,7 @@ export async function bashExec(inputCommand: string) {
       input: inputCommand,
     });
 
+    // remove \n from start and end of line
     result.stdout = result.stdout.replace(/^\s+|\s+$/g, '');
     result.stderr = result.stderr.replace(/^\s+|\s+$/g, '');
 

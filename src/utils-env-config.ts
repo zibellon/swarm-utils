@@ -8,6 +8,7 @@ class ProcessENV {
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_VERSION = '25.0.5-cli-alpine3.20'; // Версия docker-cli контейнера, который будет запускаться на каждой NODE
 
+  public SWARM_UTILS_PENDING_SERVICE_TIMEOUT = 20_000; // 20 секунд - сколько времени на запуск сервиса
   public SWARM_UTILS_LOCK_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
   public SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME = 630_000; // 10 минут 30 сек - сколько суммарно времени
   public SWARM_UTILS_LOCK_MAX_EXECUTION_TIME = 600_000; // 10 минут - сколько может выполняться BASH script
@@ -52,6 +53,9 @@ export function getProcessEnv(): ProcessENV {
     }
 
     // LOCK
+    if (typeof process.env.SWARM_UTILS_PENDING_SERVICE_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_PENDING_SERVICE_TIMEOUT = Number(process.env.SWARM_UTILS_PENDING_SERVICE_TIMEOUT);
+    }
     if (typeof process.env.SWARM_UTILS_LOCK_TIMEOUT === 'string') {
       processENV.SWARM_UTILS_LOCK_TIMEOUT = Number(process.env.SWARM_UTILS_LOCK_TIMEOUT);
     }
