@@ -133,18 +133,18 @@ export type DockerServicePsFilter = {
   key: 'id' | 'name' | 'node' | 'desired-state';
   value: string;
 };
-export function dockerServicePsCmd(service: string, filterList: DockerServicePsFilter[] = []) {
-  let cmd = `docker service ps ${service} --format json`;
+export function dockerServicePsCmd(serviceName: string, filterList: DockerServicePsFilter[] = []) {
+  let cmd = `docker service ps ${serviceName} --format json`;
   for (const filter of filterList) {
     cmd += ` --filter ${filter.key}=${filter.value}`;
   }
   return cmd;
 }
 export async function dockerServicePs(
-  service: string,
+  serviceName: string,
   filterList: DockerServicePsFilter[] = []
 ): Promise<DockerServicePsItem[]> {
-  const cmd = dockerServicePsCmd(service, filterList);
+  const cmd = dockerServicePsCmd(serviceName, filterList);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
@@ -160,8 +160,8 @@ export type DockerServiceUpdateParams = {
   registryAuth?: boolean;
   image?: string; // image-name:tag
 };
-export function dockerServiceUpdateCmd(service: string, params: DockerServiceUpdateParams = {}) {
-  let cmd = `docker service update ${service} --force`;
+export function dockerServiceUpdateCmd(serviceName: string, params: DockerServiceUpdateParams = {}) {
+  let cmd = `docker service update ${serviceName} --force`;
   if (typeof params.registryAuth === 'boolean' && params.registryAuth === true) {
     cmd += ` --with-registry-auth`;
   }
@@ -170,30 +170,30 @@ export function dockerServiceUpdateCmd(service: string, params: DockerServiceUpd
   }
   return cmd;
 }
-export async function dockerServiceUpdate(service: string, params: DockerServiceUpdateParams = {}) {
-  const cmd = dockerServiceUpdateCmd(service, params);
+export async function dockerServiceUpdate(serviceName: string, params: DockerServiceUpdateParams = {}) {
+  const cmd = dockerServiceUpdateCmd(serviceName, params);
   return await bashExec(cmd);
 }
 
 //---------
 //docker service scale ${SERVICE_NAME}=${REPLICAS_COUNT}
 //---------
-export function dockerServiceScaleCmd(service: string, replicas: number) {
-  return `docker service scale ${service}=${replicas}`;
+export function dockerServiceScaleCmd(serviceName: string, replicas: number) {
+  return `docker service scale ${serviceName}=${replicas}`;
 }
-export async function dockerServiceScale(service: string, replicas: number) {
-  const cmd = dockerServiceScaleCmd(service, replicas);
+export async function dockerServiceScale(serviceName: string, replicas: number) {
+  const cmd = dockerServiceScaleCmd(serviceName, replicas);
   return await bashExec(cmd);
 }
 
 //---------
 //docker service rm ${SERVICE_NAME}
 //---------
-export function dockerServiceRemoveCmd(service: string) {
-  return `docker service remove ${service}`;
+export function dockerServiceRemoveCmd(serviceName: string) {
+  return `docker service remove ${serviceName}`;
 }
-export async function dockerServiceRemove(service: string) {
-  const cmd = dockerServiceRemoveCmd(service);
+export async function dockerServiceRemove(serviceName: string) {
+  const cmd = dockerServiceRemoveCmd(serviceName);
   return await bashExec(cmd);
 }
 
@@ -262,6 +262,8 @@ export type DockerInspectServiceItem = {
   Version: {
     Index: number; // 4983
   };
+  CreatedAt: string; // '2024-08-14T10:59:07.247069194Z'
+  UpdatedAt: string; // '2024-08-14T10:59:30.25468235Z'
   Spec: {
     Name: string; // 'stack-name_service-name'; // test-back-dev_dev, test-back-dev=STACK, dev=SERVICE
     Labels: {
@@ -314,6 +316,8 @@ export type DockerInspectTaskItem = {
   Version: {
     Index: number; // 4982,
   };
+  CreatedAt: string; // '2024-08-14T10:59:07.247069194Z'
+  UpdatedAt: string; // '2024-08-14T10:59:30.25468235Z'
   Labels: {
     [key: string]: string;
   };
@@ -332,7 +336,7 @@ export type DockerInspectTaskItem = {
   NodeID: string; // 'n894nbopu8e41n2fa2o3wnj1n'
   Status: {
     Timestamp: string; // '2024-08-14T10:59:30.167664604Z'
-    State: string; // 'running'
+    State: string; // 'running', 'shutdown'
     Message: string; // 'started'
     ContainerStatus: {
       ContainerID: string; // '84ec08ad826849b8a5d86758912eda93cf717b266b232c879bc5fbb1adc2de45'
@@ -340,7 +344,7 @@ export type DockerInspectTaskItem = {
       ExitCode: number; // 0
     };
   };
-  DesiredState: string; // 'running'
+  DesiredState: string; // 'running', 'shutdown'
 };
 export function dockerInspectTaskCmd(taskId: string) {
   return `docker inspect ${taskId} --type task --format json`;
