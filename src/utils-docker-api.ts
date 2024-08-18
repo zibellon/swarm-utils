@@ -40,7 +40,7 @@ export function dockerNodeLsCmd(filterList: DockerNodeLsFilter[] = []) {
   }
   return cmd;
 }
-export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []): Promise<DockerNodeLsItem[]> {
+export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []) {
   const cmd = dockerNodeLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
@@ -75,7 +75,7 @@ export function dockerVolumeLsCmd(filterList: DockerVolumeLsFilter[] = []) {
   }
   return cmd;
 }
-export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []): Promise<DockerVolumeLsItem[]> {
+export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []) {
   const cmd = dockerVolumeLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
@@ -106,7 +106,7 @@ export function dockerServiceLsCmd(filterList: DockerServiceLsFilter[] = []) {
   }
   return cmd;
 }
-export async function dockerServiceLs(filterList: DockerServiceLsFilter[] = []): Promise<DockerServiceLsItem[]> {
+export async function dockerServiceLs(filterList: DockerServiceLsFilter[] = []) {
   const cmd = dockerServiceLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
@@ -140,10 +140,7 @@ export function dockerServicePsCmd(serviceName: string, filterList: DockerServic
   }
   return cmd;
 }
-export async function dockerServicePs(
-  serviceName: string,
-  filterList: DockerServicePsFilter[] = []
-): Promise<DockerServicePsItem[]> {
+export async function dockerServicePs(serviceName: string, filterList: DockerServicePsFilter[] = []) {
   const cmd = dockerServicePsCmd(serviceName, filterList);
   const result = await bashExec(cmd);
   return result.stdout
@@ -203,7 +200,7 @@ export async function dockerServiceRemove(serviceName: string) {
 export function dockerServiceLogsCmd(serviceIdOrTaskId: string) {
   return `docker service logs ${serviceIdOrTaskId} --raw`;
 }
-export async function dockerServiceLogs(serviceIdOrTaskId: string): Promise<any[]> {
+export async function dockerServiceLogs(serviceIdOrTaskId: string) {
   const cmd = dockerServiceLogsCmd(serviceIdOrTaskId);
   const result = await bashExec(cmd);
   return result.stdout
@@ -297,7 +294,7 @@ export type DockerInspectServiceItem = {
 export function dockerInspectServiceCmd(serviceId: string) {
   return `docker inspect ${serviceId} --type service --format json`;
 }
-export async function dockerInspectService(serviceId: string): Promise<DockerInspectServiceItem | null> {
+export async function dockerInspectService(serviceId: string) {
   const cmd = dockerInspectServiceCmd(serviceId);
   const result = await bashExec(cmd);
   const mappedResultList = result.stdout
@@ -349,7 +346,7 @@ export type DockerInspectTaskItem = {
 export function dockerInspectTaskCmd(taskId: string) {
   return `docker inspect ${taskId} --type task --format json`;
 }
-export async function dockerInspectTask(taskId: string): Promise<DockerInspectTaskItem | null> {
+export async function dockerInspectTask(taskId: string) {
   const cmd = dockerInspectTaskCmd(taskId);
   const result = await bashExec(cmd);
   const mappedResultList = result.stdout
