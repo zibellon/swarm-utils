@@ -1,4 +1,4 @@
-import { tokenIsAdmin } from 'src/utils-token';
+import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type BackupServiceExecParams = {
   token: string;
@@ -7,6 +7,4 @@ type BackupServiceExecParams = {
 
 export async function backupServiceExec(params: BackupServiceExecParams) {
   const isAdmin = tokenIsAdmin(params.token);
-
-  
 }

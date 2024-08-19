@@ -1,25 +1,26 @@
-import { bashExec } from './utils-bash';
+import { bashExec } from '../utils-bash';
 
 //---------
 //docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
+
 //---------
-export type DockerLoginParams = {
+export type DockerApiLoginParams = {
   user: string;
   password: string;
   registryUrl: string;
 };
-export function dockerLoginCmd(params: DockerLoginParams) {
+export function dockerApiLoginCmd(params: DockerApiLoginParams) {
   return `docker login -u ${params.user} -p ${params.password} ${params.registryUrl}`;
 }
-export async function dockerLogin(params: DockerLoginParams) {
-  const cmd = dockerLoginCmd(params);
+export async function dockerApiLogin(params: DockerApiLoginParams) {
+  const cmd = dockerApiLoginCmd(params);
   return await bashExec(cmd);
 }
 
 //---------
 //docker node ls
 //---------
-export type DockerNodeLsItem = {
+export type DockerApiNodeLsItem = {
   Availability: string; // 'Active'
   EngineVersion: string; // '27.1.1'
   Hostname: string; // 'internal-worker-1'
@@ -29,30 +30,30 @@ export type DockerNodeLsItem = {
   Status: string; // 'Ready'
   TLSStatus: string; // 'Ready'
 };
-export type DockerNodeLsFilter = {
+export type DockerApiNodeLsFilter = {
   key: 'id' | 'label' | 'node.label' | 'membership' | 'name' | 'role';
   value: string;
 };
-export function dockerNodeLsCmd(filterList: DockerNodeLsFilter[] = []) {
+export function dockerApiNodeLsCmd(filterList: DockerApiNodeLsFilter[] = []) {
   let cmd = `docker node ls --format json`;
   for (const filter of filterList) {
     cmd += ` --filter ${filter.key}=${filter.value}`;
   }
   return cmd;
 }
-export async function dockerNodeLs(filterList: DockerNodeLsFilter[] = []) {
-  const cmd = dockerNodeLsCmd(filterList);
+export async function dockerApiNodeLs(filterList: DockerApiNodeLsFilter[] = []) {
+  const cmd = dockerApiNodeLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerNodeLsItem);
+    .map((el) => JSON.parse(el) as DockerApiNodeLsItem);
 }
 
 //---------
 //docker volume ls
 //---------
-export type DockerVolumeLsItem = {
+export type DockerApiVolumeLsItem = {
   Availability: string; // 'N/A'
   Driver: string; // 'local'
   Group: string; // 'N/A'
@@ -64,30 +65,30 @@ export type DockerVolumeLsItem = {
   Size: string; // 'N/A'
   Status: string; // 'N/A'
 };
-export type DockerVolumeLsFilter = {
+export type DockerApiVolumeLsFilter = {
   key: 'dangling' | 'driver' | 'label' | 'name';
   value: string;
 };
-export function dockerVolumeLsCmd(filterList: DockerVolumeLsFilter[] = []) {
+export function dockerApiVolumeLsCmd(filterList: DockerApiVolumeLsFilter[] = []) {
   let cmd = `docker volume ls --format json`;
   for (const filter of filterList) {
     cmd += ` --filter ${filter.key}=${filter.value}`;
   }
   return cmd;
 }
-export async function dockerVolumeLs(filterList: DockerVolumeLsFilter[] = []) {
-  const cmd = dockerVolumeLsCmd(filterList);
+export async function dockerApiVolumeLs(filterList: DockerApiVolumeLsFilter[] = []) {
+  const cmd = dockerApiVolumeLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerVolumeLsItem);
+    .map((el) => JSON.parse(el) as DockerApiVolumeLsItem);
 }
 
 //---------
 //docker service ls --format json
 //---------
-export type DockerServiceLsItem = {
+export type DockerApiServiceLsItem = {
   ID: string; // 'c7gvk4c8iej6';
   Image: string; // 'registry.domain.com/image-name:tag';
   Mode: string; // 'replicated';
@@ -95,31 +96,31 @@ export type DockerServiceLsItem = {
   Ports: string; // '*:3717-\u003e9443/tcp';
   Replicas: string; // '1/1';
 };
-export type DockerServiceLsFilter = {
+export type DockerApiServiceLsFilter = {
   key: 'id' | 'label' | 'mode' | 'name';
   value: string;
 };
-export function dockerServiceLsCmd(filterList: DockerServiceLsFilter[] = []) {
+export function dockerApiServiceLsCmd(filterList: DockerApiServiceLsFilter[] = []) {
   let cmd = `docker service ls --format json`;
   for (const filter of filterList) {
     cmd += ` --filter ${filter.key}=${filter.value}`;
   }
   return cmd;
 }
-export async function dockerServiceLs(filterList: DockerServiceLsFilter[] = []) {
-  const cmd = dockerServiceLsCmd(filterList);
+export async function dockerApiServiceLs(filterList: DockerApiServiceLsFilter[] = []) {
+  const cmd = dockerApiServiceLsCmd(filterList);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerServiceLsItem);
+    .map((el) => JSON.parse(el) as DockerApiServiceLsItem);
 }
 
 //---------
 //docker service ps ${SERVICE_NAME} --format json
 //taskList in service. !important!
 //---------
-export type DockerServicePsItem = {
+export type DockerApiServicePsItem = {
   CurrentState: string; // 'Running 2 days ago'
   DesiredState: string; // 'Running'
   Error: string; // ''
@@ -129,35 +130,35 @@ export type DockerServicePsItem = {
   Node: string; // 'internal-worker-3'; // taskNode, hostname
   Ports: string; // ''
 };
-export type DockerServicePsFilter = {
+export type DockerApiServicePsFilter = {
   key: 'id' | 'name' | 'node' | 'desired-state';
   value: string;
 };
-export function dockerServicePsCmd(serviceName: string, filterList: DockerServicePsFilter[] = []) {
+export function dockerApiServicePsCmd(serviceName: string, filterList: DockerApiServicePsFilter[] = []) {
   let cmd = `docker service ps ${serviceName} --format json`;
   for (const filter of filterList) {
     cmd += ` --filter ${filter.key}=${filter.value}`;
   }
   return cmd;
 }
-export async function dockerServicePs(serviceName: string, filterList: DockerServicePsFilter[] = []) {
-  const cmd = dockerServicePsCmd(serviceName, filterList);
+export async function dockerApiServicePs(serviceName: string, filterList: DockerApiServicePsFilter[] = []) {
+  const cmd = dockerApiServicePsCmd(serviceName, filterList);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerServicePsItem);
+    .map((el) => JSON.parse(el) as DockerApiServicePsItem);
 }
 
 //---------
 //docker service update ${SERVICE_NAME} --force
 //docker service update --with-registry-auth --image=$IMAGE_NAME:dev-latest
 //---------
-export type DockerServiceUpdateParams = {
+export type DockerApiServiceUpdateParams = {
   registryAuth?: boolean;
   image?: string; // image-name:tag
 };
-export function dockerServiceUpdateCmd(serviceName: string, params: DockerServiceUpdateParams = {}) {
+export function dockerApiServiceUpdateCmd(serviceName: string, params: DockerApiServiceUpdateParams = {}) {
   let cmd = `docker service update ${serviceName} --force`;
   if (typeof params.registryAuth === 'boolean' && params.registryAuth === true) {
     cmd += ` --with-registry-auth`;
@@ -167,41 +168,41 @@ export function dockerServiceUpdateCmd(serviceName: string, params: DockerServic
   }
   return cmd;
 }
-export async function dockerServiceUpdate(serviceName: string, params: DockerServiceUpdateParams = {}) {
-  const cmd = dockerServiceUpdateCmd(serviceName, params);
+export async function dockerApiServiceUpdate(serviceName: string, params: DockerApiServiceUpdateParams = {}) {
+  const cmd = dockerApiServiceUpdateCmd(serviceName, params);
   return await bashExec(cmd);
 }
 
 //---------
 //docker service scale ${SERVICE_NAME}=${REPLICAS_COUNT}
 //---------
-export function dockerServiceScaleCmd(serviceName: string, replicas: number) {
+export function dockerApiServiceScaleCmd(serviceName: string, replicas: number) {
   return `docker service scale ${serviceName}=${replicas}`;
 }
-export async function dockerServiceScale(serviceName: string, replicas: number) {
-  const cmd = dockerServiceScaleCmd(serviceName, replicas);
+export async function dockerApiServiceScale(serviceName: string, replicas: number) {
+  const cmd = dockerApiServiceScaleCmd(serviceName, replicas);
   return await bashExec(cmd);
 }
 
 //---------
 //docker service rm ${SERVICE_NAME}
 //---------
-export function dockerServiceRemoveCmd(serviceName: string) {
+export function dockerApiServiceRemoveCmd(serviceName: string) {
   return `docker service remove ${serviceName}`;
 }
-export async function dockerServiceRemove(serviceName: string) {
-  const cmd = dockerServiceRemoveCmd(serviceName);
+export async function dockerApiServiceRemove(serviceName: string) {
+  const cmd = dockerApiServiceRemoveCmd(serviceName);
   return await bashExec(cmd);
 }
 
 //---------
 //docker service logs ${serviceIdOrTaskId} --raw
 //---------
-export function dockerServiceLogsCmd(serviceIdOrTaskId: string) {
+export function dockerApiServiceLogsCmd(serviceIdOrTaskId: string) {
   return `docker service logs ${serviceIdOrTaskId} --raw`;
 }
-export async function dockerServiceLogs(serviceIdOrTaskId: string) {
-  const cmd = dockerServiceLogsCmd(serviceIdOrTaskId);
+export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
+  const cmd = dockerApiServiceLogsCmd(serviceIdOrTaskId);
   const result = await bashExec(cmd);
   return result.stdout
     .split('\n')
@@ -212,7 +213,7 @@ export async function dockerServiceLogs(serviceIdOrTaskId: string) {
 //---------
 //docker service create ...
 //---------
-export type DockerServiceCreateParams = {
+export type DockerApiServiceCreateParams = {
   name: string;
   mode: string;
   replicas?: number;
@@ -224,7 +225,7 @@ export type DockerServiceCreateParams = {
   execShell?: 'sh' | 'bash';
   execCommand?: string;
 };
-export function dockerServiceCreateCmd(params: DockerServiceCreateParams) {
+export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {
   let cmd = `docker service create`;
   if (params.detach === true) {
     cmd += ` --detach`;
@@ -245,8 +246,8 @@ export function dockerServiceCreateCmd(params: DockerServiceCreateParams) {
   }
   return cmd;
 }
-export async function dockerServiceCreate(params: DockerServiceCreateParams) {
-  const cmd = dockerServiceCreateCmd(params);
+export async function dockerApiServiceCreate(params: DockerApiServiceCreateParams) {
+  const cmd = dockerApiServiceCreateCmd(params);
   return await bashExec(cmd);
 }
 
@@ -254,7 +255,7 @@ export async function dockerServiceCreate(params: DockerServiceCreateParams) {
 //docker inspect ${SERVICE_ID} --type service --format json
 //docker service ls --format json -> .ID -> docker inspect c7gvk4c8iej6
 //---------
-export type DockerInspectServiceItem = {
+export type DockerApiInspectServiceItem = {
   ID: string; // 'c7gvk4c8iej609z9wjowlmn62';
   Version: {
     Index: number; // 4983
@@ -291,16 +292,16 @@ export type DockerInspectServiceItem = {
     Message: string; // 'update completed';
   };
 };
-export function dockerInspectServiceCmd(serviceId: string) {
+export function dockerApiInspectServiceCmd(serviceId: string) {
   return `docker inspect ${serviceId} --type service --format json`;
 }
-export async function dockerInspectService(serviceId: string) {
-  const cmd = dockerInspectServiceCmd(serviceId);
+export async function dockerApiInspectService(serviceId: string) {
+  const cmd = dockerApiInspectServiceCmd(serviceId);
   const result = await bashExec(cmd);
   const mappedResultList = result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerInspectServiceItem);
+    .map((el) => JSON.parse(el) as DockerApiInspectServiceItem);
   return mappedResultList.length > 0 ? mappedResultList[0] : null;
 }
 
@@ -308,7 +309,7 @@ export async function dockerInspectService(serviceId: string) {
 //docker inspect ${TASK_ID} --type task --format json
 //docker service ps ${SERVICE_NAME} --format json -> .ID -> docker inspect 27zetdb6h0eq
 //---------
-export type DockerInspectTaskItem = {
+export type DockerApiInspectTaskItem = {
   ID: string; // '27zetdb6h0eq5s32vlhnqdkhs',
   Version: {
     Index: number; // 4982,
@@ -343,15 +344,15 @@ export type DockerInspectTaskItem = {
   };
   DesiredState: string; // 'running', 'shutdown'
 };
-export function dockerInspectTaskCmd(taskId: string) {
+export function dockerApiInspectTaskCmd(taskId: string) {
   return `docker inspect ${taskId} --type task --format json`;
 }
-export async function dockerInspectTask(taskId: string) {
-  const cmd = dockerInspectTaskCmd(taskId);
+export async function dockerApiInspectTask(taskId: string) {
+  const cmd = dockerApiInspectTaskCmd(taskId);
   const result = await bashExec(cmd);
   const mappedResultList = result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerInspectTaskItem);
+    .map((el) => JSON.parse(el) as DockerApiInspectTaskItem);
   return mappedResultList.length > 0 ? mappedResultList[0] : null;
 }

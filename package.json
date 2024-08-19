@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "build:tsc": "tsc",
+    "build:check": "tsc --noEmit",
     "build:esbuild": "tsc --noEmit && node esbuild.config.js",
     "dev": "nodemon -r dotenv/config -r tsconfig-paths/register src/index.ts"
   },

@@ -1,4 +1,4 @@
-import { tokenIsAdmin } from 'src/utils-token';
+import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type CleanServiceExecParams = {
   token: string;
@@ -7,6 +7,4 @@ type CleanServiceExecParams = {
 
 export async function cleanServiceExec(params: CleanServiceExecParams) {
   const isAdmin = tokenIsAdmin(params.token);
-
-  
 }

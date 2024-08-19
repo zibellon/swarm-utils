@@ -3,8 +3,8 @@ import http from 'http';
 import { backupServiceExec } from './services/backup.service';
 import { cleanServiceExec } from './services/clean.service';
 import { updateServiceExec } from './services/update.service';
-import { getProcessEnv } from './utils-env-config';
-import { logError, logInfo } from './utils-logger';
+import { getProcessEnv } from './utils/utils-env-config';
+import { logError, logInfo } from './utils/utils-logger';
 
 const port = getProcessEnv().SWARM_UTILS_SERVER_PORT;
 

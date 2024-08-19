@@ -1,6 +1,9 @@
-import { dockerInspectTask, dockerServiceLs, dockerServicePs } from './utils-docker-api';
-import { getProcessEnv } from './utils-env-config';
+import { dockerApiInspectTask, dockerApiServiceLs, dockerApiServicePs } from './utils-docker-api';
+import { getProcessEnv } from '../utils-env-config';
 
+// Получение информации о сервисе
+// Запущен или нет
+// можно удалять иил нет ? (на основе статуса)
 export async function dockerServiceGetStatusInfo(serviceName: string) {
   const result = {
     isExist: false,
@@ -15,7 +18,7 @@ export async function dockerServiceGetStatusInfo(serviceName: string) {
 }
 
 export async function dockerServiceIsExist(serviceName: string) {
-  const serviceList = await dockerServiceLs([
+  const serviceList = await dockerApiServiceLs([
     {
       key: 'name',
       value: serviceName,
@@ -29,11 +32,11 @@ export async function dockerServiceIsExist(serviceName: string) {
 }
 
 export async function dockerServiceCanRemove(serviceName: string) {
-  const taskList = await dockerServicePs(serviceName);
+  const taskList = await dockerApiServicePs(serviceName);
 
   let canRemove = true;
   for (const task of taskList) {
-    const taskInspect = await dockerInspectTask(task.ID);
+    const taskInspect = await dockerApiInspectTask(task.ID);
     if (taskInspect !== null) {
       // Сервис НЕЛЬЗЯ удалять в двух случаях
       // 1. Есть таска в статусе runnong
@@ -66,6 +69,18 @@ export async function dockerServiceListCanRemove(serviceList: string[]) {
     }
   }
   return canRemove;
+}
+
+export function dockerRegistryIsCanAuth() {
+  let needAuth = false;
+  if (
+    getProcessEnv().SWARM_UTILS_REGISTRY_URL.length > 0 &&
+    getProcessEnv().SWARM_UTILS_REGISTRY_USER.length > 0 &&
+    getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD.length > 0
+  ) {
+    needAuth = true;
+  }
+  return needAuth;
 }
 
 const pendingPs = {
