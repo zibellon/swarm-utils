@@ -6,7 +6,7 @@ class ProcessENV {
   public SWARM_UTILS_IS_CRON_CLEAN = true; // Производить чистку кластера по кроне
   public SWARM_UTILS_CRON_EXPR = '* * * * *'; // Интервал работы кроны (Cron string)
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
-  public SWARM_UTILS_DOCKER_CLI_VERSION = '25.0.5-cli-alpine3.20'; // Версия docker-cli контейнера, который будет запускаться на каждой NODE
+  public SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = 'docker:25.0.5-cli-alpine3.20'; // Название docker-cli image, который будет запускаться на каждой NODE
 
   public SWARM_UTILS_PENDING_SERVICE_TIMEOUT = 20_000; // 20 секунд - сколько времени на запуск сервиса
   public SWARM_UTILS_LOCK_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
@@ -48,8 +48,8 @@ export function getProcessEnv(): ProcessENV {
     if (typeof process.env.SWARM_UTILS_ADMIN_TOKEN_LIST === 'string') {
       processENV.SWARM_UTILS_ADMIN_TOKEN_LIST = process.env.SWARM_UTILS_ADMIN_TOKEN_LIST;
     }
-    if (typeof process.env.SWARM_UTILS_DOCKER_CLI_VERSION === 'string') {
-      processENV.SWARM_UTILS_DOCKER_CLI_VERSION = process.env.SWARM_UTILS_DOCKER_CLI_VERSION;
+    if (typeof process.env.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME === 'string') {
+      processENV.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = process.env.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME;
     }
 
     // LOCK
