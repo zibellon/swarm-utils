@@ -34,8 +34,8 @@
    1. Интервал работы кроны (Cron string)
 5. SWARM_UTILS_ADMIN_TOKEN_LIST=tokenA,tokenB,tokenC,
    1. Список из токенов, которае имею админ-права
-6. SWARM_UTILS_DOCKER_CLI_VERSION=25.0.5-cli-alpine3.20
-   1. Версия docker-cli контейнера, который будет запускаться на каждой `NODE`
+6. SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
+   1. Название docker-cli image, который будет запускаться на каждой `NODE`
 7. SWARM_UTILS_LOCK_TIMEOUT=10_000
    1. 10 секунд - сколько времени на уствновку блокировки
 8. SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME=630_000
