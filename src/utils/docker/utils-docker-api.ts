@@ -215,7 +215,7 @@ export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
 //---------
 export type DockerApiServiceCreateParams = {
   name: string;
-  mode: string;
+  mode: string; // replicated
   replicas?: number;
   constraint: string; // node.hostname==$taskNode
   'restart-condition': string; // none
@@ -234,6 +234,8 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
   cmd += ` --mode ${params.mode}`;
   if (typeof params.replicas === 'number' && params.replicas > 0) {
     cmd += ` --replicas ${params.replicas}`;
+  } else if (params.mode === 'replicated') {
+    cmd += ` --replicas 1`;
   }
   cmd += ` --constraint ${params.constraint}`;
   cmd += ` --restart-condition ${params['restart-condition']}`;
