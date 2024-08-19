@@ -1,10 +1,8 @@
 import { CronJob } from 'cron';
-import { dockerServiceGetStatusInfo } from 'src/utils/docker/utils-docker';
-import { dockerApiNodeLs, dockerApiServiceLs, dockerApiServiceRemove } from 'src/utils/docker/utils-docker-api';
 import { getProcessEnv } from 'src/utils/utils-env-config';
-import { lockResource } from 'src/utils/utils-lock';
 import { logError } from 'src/utils/utils-logger';
 import { cronCleanNodeList } from './utils-cron-clean-node';
+import { cronCleanServiceList } from './utils-cron-clean-service';
 
 let isCronProgress = false;
 
@@ -21,7 +19,11 @@ export async function initCron() {
         });
       });
 
-      
+      await cronCleanServiceList(dateCron).catch((err) => {
+        logError('CRON.cronCleanServiceList.ERR', err, {
+          dateCron,
+        });
+      });
     }
   });
 
@@ -45,17 +47,5 @@ export async function initCron() {
 // waitForServiceComplete $execServiceName
 
 // docker service logs $execServiceName
-// docker service remove $execServiceName
-
-async function cronCleanServiceListProgress(dateCron: Date) {
-  const serviceList = await dockerApiServiceLs([
-    {
-      key: 'label',
-      value: '',
-    },
-  ]);
-  for (const service of serviceList) {
-  }
-}
 
 async function cronBackupProgress(dateCron: Date) {}

@@ -23,13 +23,14 @@ export async function cronCleanNodeList(dateCron: Date) {
   // Очистка Node
   const nodeList = await dockerApiNodeLs();
   for (const node of nodeList) {
-    await cronCleanNodeItem(node);
+    await cronCleanNodeItem(node, dateCron);
   }
 }
 
-async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
+async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem, dateCron: Date) {
   logInfo('cronCleanNodeItem.INIT', {
     nodeItem,
+    dateCron,
   });
 
   const nodeKey = `${nodeItem.ID}_${nodeItem.Hostname}`;
@@ -55,8 +56,9 @@ async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
       }
 
       if (canContinue === false) {
-        logWarn('cronCleanNodeProgress.CANNOT_CONTINUE_1', {
-          nodeKey,
+        logWarn('cronCleanNodeItem.CANNOT_CONTINUE_1', {
+          nodeItem,
+          dateCron,
         });
         return;
       }
@@ -116,8 +118,9 @@ async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
       // ...
     })
     .catch((err) => {
-      logError('cronCleanProgress.for.nodeList.ERR', err, {
+      logError('cronCleanNodeItem.ERR', err, {
         nodeItem,
+        dateCron,
       });
     });
 }
