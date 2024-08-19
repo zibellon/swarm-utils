@@ -216,10 +216,10 @@ export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
 export type DockerApiServiceCreateParams = {
   name: string;
   mode: string; // replicated
-  replicas?: number;
+  replicas?: number; // 1
   constraint: string; // node.hostname==$taskNode
   'restart-condition': string; // none
-  detach: boolean;
+  detach: boolean; // true
   mountList: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
   image: string; // docker:25.0.5-cli-alpine3.20
   execShell?: 'sh' | 'bash';
