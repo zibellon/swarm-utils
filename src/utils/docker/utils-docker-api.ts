@@ -217,7 +217,7 @@ export type DockerApiServiceCreateParams = {
   name: string;
   mode: string; // replicated
   replicas?: number; // 1
-  constraint: string; // node.hostname==$taskNode
+  constraint: string; // node.hostname==$taskNode, node.id==$nodeId
   'restart-condition': string; // none
   detach: boolean; // true
   mountList: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
