@@ -2,7 +2,7 @@ import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type CleanServiceExecParams = {
   token: string;
-  service: string;
+  serviceName: string;
 };
 
 export async function cleanServiceExec(params: CleanServiceExecParams) {

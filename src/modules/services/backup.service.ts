@@ -2,7 +2,7 @@ import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type BackupServiceExecParams = {
   token: string;
-  service: string;
+  serviceName: string;
 };
 
 export async function backupServiceExec(params: BackupServiceExecParams) {

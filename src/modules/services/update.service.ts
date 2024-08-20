@@ -1,11 +1,17 @@
 import { dockerRegistryIsCanAuth } from 'src/utils/docker/utils-docker';
-import { dockerApiLogin, dockerApiServiceLs, DockerApiServiceLsFilter, dockerApiServiceUpdate } from 'src/utils/docker/utils-docker-api';
+import {
+  dockerApiLogin,
+  dockerApiServiceLs,
+  DockerApiServiceLsFilter,
+  dockerApiServiceUpdate,
+} from 'src/utils/docker/utils-docker-api';
 import { getProcessEnv } from 'src/utils/utils-env-config';
+import { logWarn } from 'src/utils/utils-logger';
 import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type UpdateServiceExecParams = {
   token: string;
-  service: string;
+  serviceName: string;
   registryAuth: boolean;
   image?: string;
 };
@@ -16,7 +22,7 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
   const filterList: DockerApiServiceLsFilter[] = [
     {
       key: 'name',
-      value: params.service,
+      value: params.serviceName,
     },
   ];
   if (!isAdmin) {
@@ -29,6 +35,9 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
   const serviceList = await dockerApiServiceLs(filterList);
   if (serviceList.length === 0) {
     // LOG - что сервис не найден
+    logWarn('updateServiceExec.NOT_FOUND', {
+      params,
+    });
     return;
   }
 
@@ -47,7 +56,7 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
   // Запуск сервиса для выполнения update CMD
   // ...
 
-  await dockerApiServiceUpdate(params.service, {
+  await dockerApiServiceUpdate(params.serviceName, {
     image: params.image,
     registryAuth,
   });
