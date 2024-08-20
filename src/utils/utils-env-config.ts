@@ -8,10 +8,26 @@ class ProcessENV {
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = 'docker:25.0.5-cli-alpine3.20'; // Название docker-cli image, который будет запускаться на каждой NODE
 
+  // BACKUP_SERVICE_TIMEOUT
+  public SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = 60_000; // 60 секунд - сколько времени на EXEC команду в момент BACKUP_SERVICE
+  public SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT = 30_000; // 30 секунд - сколько времени на STOP команду в момент BACKUP_SERVICE
+  public SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT = 60_000; // 60 секунд - сколько времени на UPLOAD команду в момент BACKUP_SERVICE
+
+  // CLEAN_SERVICE_TIMEOUT
+  public SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = 30_000; // 30 секунд - сколько времени на EXEC команду в момент CLEAN_SERVICE
+
+  // UPDATE_SERVICE_TIMEOUT
+  public SWARM_UTILS_UPDATE_SERVICE_TIMEOUT = 30_000; // 30 секунд - сколько времени на UPDATE_SERVICE
+
+  // CLEAN_SERVICE_TIMEOUT
+  public SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT = 30_000; // 30 секунд - сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
+  public SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT = 30_000; // 30 секунд - сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
+  public SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = 30_000; // 30 секунд - сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
+
+  // Timeouts - общие
   public SWARM_UTILS_PENDING_SERVICE_TIMEOUT = 20_000; // 20 секунд - сколько времени на запуск сервиса
   public SWARM_UTILS_LOCK_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
-  public SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME = 630_000; // 10 минут 30 сек - сколько суммарно времени
-  public SWARM_UTILS_LOCK_MAX_EXECUTION_TIME = 600_000; // 10 минут - сколько может выполняться BASH script
+  public SWARM_UTILS_EXTRA_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
 
   // S3 (offen-backup)
   public SWARM_UTILS_S3_DOMAIN = 's3-api.domain.com'; // Доменное имя где находится облако S3
@@ -52,18 +68,46 @@ export function getProcessEnv(): ProcessENV {
       processENV.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = process.env.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME;
     }
 
-    // LOCK
+    // Timeouts
+    //
+    if (typeof process.env.SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = Number(process.env.SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT);
+    }
+    if (typeof process.env.SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT = Number(process.env.SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT);
+    }
+    if (typeof process.env.SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT = Number(
+        process.env.SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
+      );
+    }
+    //
+    if (typeof process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT);
+    }
+    //
+    if (typeof process.env.SWARM_UTILS_UPDATE_SERVICE_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_UPDATE_SERVICE_TIMEOUT = Number(process.env.SWARM_UTILS_UPDATE_SERVICE_TIMEOUT);
+    }
+    //
+    if (typeof process.env.SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
+    }
+    if (typeof process.env.SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
+    }
+    if (typeof process.env.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT);
+    }
+    //
     if (typeof process.env.SWARM_UTILS_PENDING_SERVICE_TIMEOUT === 'string') {
       processENV.SWARM_UTILS_PENDING_SERVICE_TIMEOUT = Number(process.env.SWARM_UTILS_PENDING_SERVICE_TIMEOUT);
     }
     if (typeof process.env.SWARM_UTILS_LOCK_TIMEOUT === 'string') {
       processENV.SWARM_UTILS_LOCK_TIMEOUT = Number(process.env.SWARM_UTILS_LOCK_TIMEOUT);
     }
-    if (typeof process.env.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME === 'string') {
-      processENV.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME = Number(process.env.SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME);
-    }
-    if (typeof process.env.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME === 'string') {
-      processENV.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME = Number(process.env.SWARM_UTILS_LOCK_MAX_EXECUTION_TIME);
+    if (typeof process.env.SWARM_UTILS_EXTRA_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_EXTRA_TIMEOUT = Number(process.env.SWARM_UTILS_EXTRA_TIMEOUT);
     }
 
     //S3
