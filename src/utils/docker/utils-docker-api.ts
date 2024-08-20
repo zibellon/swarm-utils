@@ -357,3 +357,63 @@ export async function dockerApiInspectTask(taskId: string) {
     .map((el) => JSON.parse(el) as DockerApiInspectTaskItem);
   return mappedResultList.length > 0 ? mappedResultList[0] : null;
 }
+
+//---------
+//docker inspect ${NODE_ID} --type node --format json
+//---------
+export type DockerApiInspectNodeItem = {
+  ID: string; // 'xw5mic2731kjq52y9zbruxsil'
+  Version: {
+    Index: number; // 4682472
+  };
+  CreatedAt: string; // '2024-05-04T20:13:46.790822983Z'
+  UpdatedAt: string; // '2024-06-29T20:39:00.006322429Z'
+  Spec: {
+    Labels: {
+      [key: string]: string;
+      // 'node-name': 'InternalManager1'
+    };
+    Role: string; // 'manager' / 'worker'
+    Availability: string; // 'active'
+  };
+  Description: {
+    Hostname: string; // 'internal-manager-1'
+    Platform: {
+      Architecture: string; // 'x86_64'
+      OS: string; // 'linux'
+    };
+    Resources: {
+      NanoCPUs: number; // 8000000000
+      MemoryBytes: number; // 12558061568
+    };
+    Engine: {
+      EngineVersion: string; // '25.0.5'
+    };
+    TLSInfo: {
+      TrustRoot: string; // '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n'
+      CertIssuerSubject: string; // '...'
+      CertIssuerPublicKey: string; // '...XXX=='
+    };
+  };
+  Status: {
+    State: string; // 'ready'
+    Addr: string; // 'IP'
+  };
+  ManagerStatus?: {
+    Leader: boolean; // true / false
+    Reachability: string; // 'reachable'
+    Addr: string; // 'IP:2377'
+  };
+};
+export function dockerApiInspectNodeCmd(nodeId: string) {
+  return `docker inspect ${nodeId} --type node --format json`;
+}
+export async function dockerApiInspectNode(nodeId: string) {
+  const cmd = dockerApiInspectTaskCmd(nodeId);
+  const result = await bashExec(cmd);
+  const mappedResultList = result.stdout
+    .split('\n')
+    .filter((el) => el.length > 0)
+    .map((el) => JSON.parse(el) as DockerApiInspectNodeItem);
+  return mappedResultList.length > 0 ? mappedResultList[0] : null;
+}
