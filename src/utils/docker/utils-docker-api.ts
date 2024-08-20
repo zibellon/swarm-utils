@@ -222,7 +222,6 @@ export type DockerApiServiceCreateParams = {
   detach: boolean; // true
   mountList: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
   image: string; // docker:25.0.5-cli-alpine3.20
-  execShell?: 'sh' | 'bash';
   execCommand?: string;
 };
 export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {
@@ -243,8 +242,8 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
     cmd += ` --mount ${mount}`;
   }
   cmd += ` ${params.image}`;
-  if (typeof params.execShell === 'string' && typeof params.execCommand === 'string') {
-    cmd += ` ${params.execShell} -c "${params.execCommand}"`;
+  if (typeof params.execCommand === 'string') {
+    cmd += ` sh -c "${params.execCommand}"`;
   }
   return cmd;
 }

@@ -128,6 +128,9 @@ async function cronCleanServiceItemExecOnTask(
     return;
   }
 
+  // Получить id контейнера - в котором нужно сделать exec команду
+  const containerId = taskInspect.Status.ContainerStatus.ContainerID;
+
   const cleanServiceExecServiceName = nameCleanServiceExec(serviceItem.Name);
   await dockerApiServiceCreate({
     detach: true,
@@ -138,8 +141,7 @@ async function cronCleanServiceItemExecOnTask(
     constraint: `node.id==${taskInspect.NodeID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
-    execCommand: execCommand, // From label
+    execCommand: `docker exec ${containerId} /bin/sh -c '${execCommand}'`, // From label
   });
   // WAIT FOR SERVICE COMPLETE
   // ...

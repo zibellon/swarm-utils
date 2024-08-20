@@ -47,5 +47,3 @@ export async function initCron() {
 // waitForServiceComplete $execServiceName
 
 // docker service logs $execServiceName
-
-async function cronBackupProgress(dateCron: Date) {}

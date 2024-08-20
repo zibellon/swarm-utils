@@ -92,7 +92,6 @@ async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem, dateCron: Date) 
         constraint: `node.hostname==${nodeItem.Hostname}`,
         'restart-condition': 'none',
         mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-        execShell: 'sh',
         execCommand: 'docker image prune -a -f',
       });
       // WAIT FOR SERVICE COMPLETE
@@ -111,7 +110,6 @@ async function cronCleanNodeItem(nodeItem: DockerApiNodeLsItem, dateCron: Date) 
         constraint: `node.hostname==${nodeItem.Hostname}`,
         'restart-condition': 'none',
         mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-        execShell: 'sh',
         execCommand: 'docker builder prune -f',
       });
       // WAIT FOR SERVICE COMPLETE
