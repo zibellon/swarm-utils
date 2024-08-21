@@ -1,7 +1,13 @@
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { logInfo, logWarn } from '../utils-logger';
-import { dockerApiInspectTask, dockerApiServiceLs, dockerApiServicePs } from './utils-docker-api';
+import { nameGetAllServiceNamesForService } from '../utils-names';
+import {
+  dockerApiInspectTask,
+  dockerApiServiceLs,
+  dockerApiServicePs,
+  dockerApiServiceRemove,
+} from './utils-docker-api';
 
 // Получение информации о сервисе
 // Запущен или нет
@@ -26,11 +32,7 @@ export async function dockerServiceIsExist(serviceName: string) {
       value: serviceName,
     },
   ]);
-  // Сервиса еще нет
-  if (serviceList.length === 0) {
-    return false;
-  }
-  return true;
+  return serviceList.length > 0;
 }
 
 export async function dockerServiceCanRemove(serviceName: string) {
@@ -39,21 +41,29 @@ export async function dockerServiceCanRemove(serviceName: string) {
   let canRemove = true;
   for (const task of taskList) {
     const taskInspect = await dockerApiInspectTask(task.ID);
-    if (taskInspect !== null) {
-      // Сервис НЕЛЬЗЯ удалять в двух случаях
-      // 1. Есть таска в статусе runnong
-      // 2. Есть таска в статусе pending + createdAt > Now() - 30 sec (set in ENV)
+    if (taskInspect === null) {
+      continue;
+    }
 
-      // Есть таска в статусе runnong
-      if (taskInspect.Status.State.toLowerCase() === 'running') {
+    // Сервис НЕЛЬЗЯ удалять в двух случаях
+    // 1. Есть таска в статусе runnong
+    // 2. Есть таска в статусе pending + createdAt > Now() - 30 sec (set in ENV)
+
+    // "DesiredState": "shutdown" - можно посмотреть и без inspect
+    // inspect - нужен только для отлова: вечного pending
+
+    // Есть таска в статусе running || "DesiredState": "shutdown"
+    if (
+      taskInspect.DesiredState.toLocaleLowerCase() !== 'shutdown' ||
+      taskInspect.Status.State.toLowerCase() === 'running'
+    ) {
+      canRemove = false;
+    } else if (taskInspect.Status.State.toLowerCase() === 'pending') {
+      // Есть таска в статусе pending AND createdAt + 30 sec > Now(). (set in ENV)
+      const createdAt = new Date(taskInspect.CreatedAt);
+      const now = new Date();
+      if (createdAt.getTime() + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT > now.getTime()) {
         canRemove = false;
-      } else if (taskInspect.Status.State.toLowerCase() === 'pending') {
-        // Есть таска в статусе pending AND createdAt + 30 sec > Now(). (set in ENV)
-        const createdAt = new Date(taskInspect.CreatedAt);
-        const now = new Date();
-        if (createdAt.getTime() + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT > now.getTime()) {
-          canRemove = false;
-        }
       }
     }
   }
@@ -81,29 +91,27 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
     timeout,
   };
 
-  logInfo('dockerWaitForServiceComplete.INIT', logData);
-
   const timeoutTime = new Date().getTime() + timeout;
   let currentTime = new Date().getTime();
 
-  let isComplete = true;
+  logInfo('dockerWaitForServiceComplete.INIT', {
+    ...logData,
+    timeoutTime,
+    currentTime,
+  });
 
-  const taskList = await dockerApiServicePs(serviceName);
-  for (const taskItem of taskList) {
-    if (taskItem.DesiredState.toLocaleLowerCase() !== 'shutdown') {
-      isComplete = false;
-    }
-  }
+  let isComplete = false;
+
+  const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
+
+  // Или не существует или можно удалить
+  isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
 
   while (currentTime < timeoutTime && isComplete === false) {
     await new Promise((r) => setTimeout(r, 2000));
 
-    const taskList = await dockerApiServicePs(serviceName);
-    for (const taskItem of taskList) {
-      if (taskItem.DesiredState.toLocaleLowerCase() !== 'shutdown') {
-        isComplete = false;
-      }
-    }
+    const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
+    isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
   }
 
   if (isComplete === true) {
@@ -117,7 +125,39 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
 }
 
 // Добавить метод для проверки списка сервисов, удаления и указания - можно идти дальше или нет ?
-// ....
+export async function dockerCheckAndRemoveSupportServices(serviceName: string) {
+  logInfo('dockerCheckAndRemoveSupportServices', {
+    serviceName,
+  });
+
+  const allServiceNameList = nameGetAllServiceNamesForService(serviceName);
+  let canContinue = true;
+  const removeServiceNameList: string[] = [];
+  for (const serviceName of allServiceNameList) {
+    const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
+    if (serviceStatusInfo.isExist) {
+      if (serviceStatusInfo.canRemove) {
+        // Сервис существует и его МОЖНО удалить
+        removeServiceNameList.push(serviceName);
+      } else {
+        canContinue = false;
+      }
+    }
+  }
+  if (canContinue === false) {
+    logWarn('dockerCheckAndRemoveSupportServices.CANNOT_CONTINUE_1', {
+      serviceName,
+    });
+    throwErrorSimple('dockerCheckAndRemoveSupportServices.CANNOT_CONTINUE_1', {
+      serviceName,
+    });
+  }
+  if (removeServiceNameList.length > 0) {
+    for (const serviceName of removeServiceNameList) {
+      await dockerApiServiceRemove(serviceName);
+    }
+  }
+}
 
 export function dockerRegistryIsCanAuth() {
   let needAuth = false;

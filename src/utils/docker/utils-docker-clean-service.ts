@@ -1,8 +1,8 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
-import { nameCleanServiceExec, nameGetAllServiceNamesForService, nameLock } from '../utils-names';
-import { dockerServiceGetStatusInfo, dockerWaitForServiceComplete } from './utils-docker';
+import { nameCleanServiceExec, nameLock } from '../utils-names';
+import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -11,7 +11,6 @@ import {
   DockerApiServiceLsItem,
   dockerApiServicePs,
   DockerApiServicePsItem,
-  dockerApiServiceRemove,
 } from './utils-docker-api';
 
 export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
@@ -64,36 +63,8 @@ async function dockerCleanServiceItem(
   logInfo('dockerCleanServiceItem.INIT', {
     serviceItem,
   });
-
-  //---------
-  //SEPARATE
-  //---------
-  const allServiceNameList = nameGetAllServiceNamesForService(serviceItem.Name);
-  let canContinue = true;
-  const removeServiceNameList: string[] = [];
-  for (const serviceName of allServiceNameList) {
-    const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
-    if (serviceStatusInfo.isExist) {
-      if (serviceStatusInfo.canRemove) {
-        // Сервис существует и его МОЖНО удалить
-        removeServiceNameList.push(serviceName);
-      } else {
-        canContinue = false;
-      }
-    }
-  }
-  if (canContinue === false) {
-    logWarn('dockerCleanServiceItem.CANNOT_CONTINUE_1', {
-      serviceItem,
-    });
-    return;
-  }
-  if (removeServiceNameList.length > 0) {
-    for (const serviceName of removeServiceNameList) {
-      await dockerApiServiceRemove(serviceName);
-    }
-  }
-  //---------
+  // Проверка и удаление всех сервисов + ThrowError
+  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
 
   // 'traefik.http.routers.router-test-back-dev-http.entryPoints': 'web';
   // Поиск label - где такой ключ и есть значение

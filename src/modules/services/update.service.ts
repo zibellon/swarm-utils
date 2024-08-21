@@ -1,10 +1,6 @@
 import { dockerRegistryIsCanAuth } from 'src/utils/docker/utils-docker';
-import {
-  dockerApiLogin,
-  dockerApiServiceLs,
-  DockerApiServiceLsFilter,
-  dockerApiServiceUpdate,
-} from 'src/utils/docker/utils-docker-api';
+import { dockerApiLogin, dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
+import { dockerUpdateServiceList } from 'src/utils/docker/utils-docker-update-service';
 import { getProcessEnv } from 'src/utils/utils-env-config';
 import { logWarn } from 'src/utils/utils-logger';
 import { tokenIsAdmin } from 'src/utils/utils-token';
@@ -54,10 +50,8 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
   }
 
   // Запуск сервиса для выполнения update CMD
-  // ...
-
-  await dockerApiServiceUpdate(params.serviceName, {
+  await dockerUpdateServiceList(serviceList, {
+    registryAuth: params.registryAuth,
     image: params.image,
-    registryAuth,
   });
 }

@@ -1,15 +1,9 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError, logInfo, logWarn } from '../utils-logger';
-import {
-  nameCleanNodeBuilder,
-  nameCleanNodeContainers,
-  nameCleanNodeImages,
-  nameGetAllServiceNamesForNode,
-  nameLock,
-} from '../utils-names';
-import { dockerServiceGetStatusInfo, dockerWaitForServiceComplete } from './utils-docker';
-import { DockerApiNodeLsItem, dockerApiServiceCreate, dockerApiServiceRemove } from './utils-docker-api';
+import { logError, logInfo } from '../utils-logger';
+import { nameCleanNodeBuilder, nameCleanNodeContainers, nameCleanNodeImages, nameLock } from '../utils-names';
+import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
+import { DockerApiNodeLsItem, dockerApiServiceCreate } from './utils-docker-api';
 
 export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   for (const nodeItem of nodeList) {
@@ -50,35 +44,8 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
 
   const nodeKey = `${nodeItem.ID}`;
 
-  const allServiceNameList = nameGetAllServiceNamesForNode(nodeKey);
-
-  let canContinue = true;
-  const removeServiceNameList: string[] = [];
-
-  for (const serviceName of allServiceNameList) {
-    const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
-    if (serviceStatusInfo.isExist) {
-      if (serviceStatusInfo.canRemove) {
-        // Сервис существует и его МОЖНО удалить
-        removeServiceNameList.push(serviceName);
-      } else {
-        canContinue = false;
-      }
-    }
-  }
-
-  if (canContinue === false) {
-    logWarn('dockerCleanNodeList.CANNOT_CONTINUE_1', {
-      nodeItem,
-    });
-    return;
-  }
-
-  if (removeServiceNameList.length > 0) {
-    for (const serviceName of removeServiceNameList) {
-      await dockerApiServiceRemove(serviceName);
-    }
-  }
+  // Проверка и удаление всех сервисов
+  await dockerCheckAndRemoveSupportServices(nodeKey);
 
   // docker service create \
   //   --detach \
@@ -100,7 +67,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.hostname==${nodeItem.Hostname}`,
+    constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execCommand: 'docker image prune -a -f',
@@ -118,7 +85,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.hostname==${nodeItem.Hostname}`,
+    constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execCommand: 'docker builder prune -f',
@@ -136,7 +103,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.hostname==${nodeItem.Hostname}`,
+    constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execCommand: 'docker container prune -f',
