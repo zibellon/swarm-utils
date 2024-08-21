@@ -1,14 +1,9 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError, logWarn } from '../utils-logger';
+import { logError } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
-import {
-  dockerApiInspectService,
-  dockerApiServiceCreate,
-  DockerApiServiceLsItem,
-  dockerApiServiceUpdateCmd,
-} from './utils-docker-api';
+import { dockerApiServiceCreate, DockerApiServiceLsItem, dockerApiServiceUpdateCmd } from './utils-docker-api';
 
 type DockerUpdateServiceParams = {
   registryAuth: boolean;
@@ -19,13 +14,14 @@ export async function dockerUpdateServiceList(
   params: DockerUpdateServiceParams
 ) {
   for (const serviceItem of serviceList) {
-    const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
-    if (inspectServiceInfo === null) {
-      logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
-        serviceItem,
-      });
-      continue;
-    }
+    //TODO - работа с ошибками
+    // const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    // if (inspectServiceInfo === null) {
+    //   logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
+    //     serviceItem,
+    //   });
+    //   continue;
+    // }
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;

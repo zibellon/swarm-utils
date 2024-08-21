@@ -15,6 +15,7 @@ import {
 
 export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
+    //TODO - работа с ошибками
     const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
     if (inspectServiceInfo === null) {
       logWarn('dockerCleanServiceList.serviceItem.inspectServiceInfo.NULL', {
@@ -23,6 +24,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       continue;
     }
 
+    //TODO - работа с ошибками
     const taskList = await dockerApiServicePs(serviceItem.Name, [
       {
         key: 'desired-state',

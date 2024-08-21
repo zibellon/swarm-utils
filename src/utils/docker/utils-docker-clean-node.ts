@@ -42,6 +42,9 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     nodeItem,
   });
 
+  // TODO - Проверка, что NODE вообще ДОСТУПНА
+  // ...
+
   const nodeKey = `${nodeItem.ID}`;
 
   // Проверка и удаление всех сервисов
