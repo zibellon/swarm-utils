@@ -8,6 +8,7 @@ import {
   nameBackupServiceTarUpload,
   nameLock,
 } from '../utils-names';
+import { authIsS3Enable } from '../utils-token';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectService,
@@ -140,7 +141,7 @@ async function dockerBackupServiceItem(
   //---------
   // UPLOAD
   //---------
-  if (nodeVolumeListMap.size > 0) {
+  if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
       await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
     }
