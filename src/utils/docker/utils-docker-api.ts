@@ -122,7 +122,7 @@ export async function dockerApiServiceLs(filterList: DockerApiServiceLsFilter[] 
 //---------
 export type DockerApiServicePsItem = {
   CurrentState: string; // 'Running 2 days ago'
-  DesiredState: string; // 'Running'
+  DesiredState: string; // 'Running', Shutdown, or Accepted
   Error: string; // ''
   ID: string; // '27zetdb6h0eq', taskId
   Image: string; // 'registry.domain.com/image-name:tag'

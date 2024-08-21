@@ -1,5 +1,7 @@
-import { dockerApiInspectTask, dockerApiServiceLs, dockerApiServicePs } from './utils-docker-api';
 import { getProcessEnv } from '../utils-env-config';
+import { throwErrorSimple } from '../utils-error';
+import { logInfo, logWarn } from '../utils-logger';
+import { dockerApiInspectTask, dockerApiServiceLs, dockerApiServicePs } from './utils-docker-api';
 
 // Получение информации о сервисе
 // Запущен или нет
@@ -70,6 +72,52 @@ export async function dockerServiceListCanRemove(serviceList: string[]) {
   }
   return canRemove;
 }
+
+// Метод для ожидания завершения работы сервиса
+// WHILE + timeout. timeout - передавать как параметр
+export async function dockerWaitForServiceComplete(serviceName: string, timeout: number) {
+  const logData = {
+    serviceName,
+    timeout,
+  };
+
+  logInfo('dockerWaitForServiceComplete.INIT', logData);
+
+  const timeoutTime = new Date().getTime() + timeout;
+  let currentTime = new Date().getTime();
+
+  let isComplete = true;
+
+  const taskList = await dockerApiServicePs(serviceName);
+  for (const taskItem of taskList) {
+    if (taskItem.DesiredState.toLocaleLowerCase() !== 'shutdown') {
+      isComplete = false;
+    }
+  }
+
+  while (currentTime < timeoutTime && isComplete === false) {
+    await new Promise((r) => setTimeout(r, 2000));
+
+    const taskList = await dockerApiServicePs(serviceName);
+    for (const taskItem of taskList) {
+      if (taskItem.DesiredState.toLocaleLowerCase() !== 'shutdown') {
+        isComplete = false;
+      }
+    }
+  }
+
+  if (isComplete === true) {
+    logInfo('dockerWaitForServiceComplete.COMPLETE', logData);
+    return;
+  }
+
+  logWarn('dockerWaitForServiceComplete.TIMEOUT_ERROR', logData);
+
+  throwErrorSimple('dockerWaitForServiceComplete.TIMEOUT', logData);
+}
+
+// Добавить метод для проверки списка сервисов, удаления и указания - можно идти дальше или нет ?
+// ....
 
 export function dockerRegistryIsCanAuth() {
   let needAuth = false;

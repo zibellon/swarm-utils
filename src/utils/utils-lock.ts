@@ -3,8 +3,6 @@ import { getProcessEnv } from './utils-env-config';
 
 export const lockResource = new AsyncLock({
   timeout: getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT,
-  maxExecutionTime: getProcessEnv().SWARM_UTILS_LOCK_MAX_EXECUTION_TIME,
-  maxOccupationTime: getProcessEnv().SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME,
 });
 
 // // Specify timeout - max amount of time an item can remain in the queue before acquiring the lock
