@@ -73,6 +73,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+    execShell: 'sh',
     execCommand: 'docker image prune -a -f',
   });
   // WAIT FOR SERVICE COMPLETE
@@ -91,6 +92,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+    execShell: 'sh',
     execCommand: 'docker builder prune -f',
   });
   // WAIT FOR SERVICE COMPLETE
@@ -109,6 +111,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
     constraint: `node.id==${nodeItem.ID}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+    execShell: 'sh',
     execCommand: 'docker container prune -f',
   });
   // WAIT FOR SERVICE COMPLETE

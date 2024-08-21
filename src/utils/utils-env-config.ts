@@ -12,6 +12,7 @@ class ProcessENV {
   public SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = 60_000; // 60 секунд - сколько времени на EXEC команду в момент BACKUP_SERVICE
   public SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT = 30_000; // 30 секунд - сколько времени на STOP команду в момент BACKUP_SERVICE
   public SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT = 60_000; // 60 секунд - сколько времени на UPLOAD команду в момент BACKUP_SERVICE
+  public SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT = 60_000; // 60 секунд - сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
 
   // CLEAN_SERVICE_TIMEOUT
   public SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = 30_000; // 30 секунд - сколько времени на EXEC команду в момент CLEAN_SERVICE
@@ -81,6 +82,11 @@ export function getProcessEnv(): ProcessENV {
         process.env.SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
       );
     }
+    if (typeof process.env.SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT === 'string') {
+      processENV.SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT = Number(
+        process.env.SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
+      );
+    }
     //
     if (typeof process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT === 'string') {
       processENV.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT);
@@ -97,7 +103,9 @@ export function getProcessEnv(): ProcessENV {
       processENV.SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
     }
     if (typeof process.env.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT === 'string') {
-      processENV.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = Number(process.env.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT);
+      processENV.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = Number(
+        process.env.SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
+      );
     }
     //
     if (typeof process.env.SWARM_UTILS_PENDING_SERVICE_TIMEOUT === 'string') {

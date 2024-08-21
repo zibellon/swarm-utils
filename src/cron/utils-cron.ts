@@ -1,6 +1,7 @@
 import { CronJob } from 'cron';
 import { getProcessEnv } from 'src/utils/utils-env-config';
 import { logError } from 'src/utils/utils-logger';
+import { cronBackupServiceList } from './utils-cron-backup-service';
 import { cronCleanNodeList } from './utils-cron-clean-node';
 import { cronCleanServiceList } from './utils-cron-clean-service';
 
@@ -24,26 +25,15 @@ export async function initCron() {
           dateCron,
         });
       });
+
+      await cronBackupServiceList(dateCron).catch((err) => {
+        logError('CRON.cronBackupServiceList.ERR', err, {
+          dateCron,
+        });
+      });
     }
   });
 
   cronJob.start();
 }
-
-// execServiceName="docker_backuper_exec"
-// execCommand="docker exec $containerId /bin/sh -c '$execLabel'"
-
-// docker service create \
-//   --detach \
-//   --name $execServiceName \
-//   --mode replicated \
-//   --replicas 1 \
-//   --constraint node.hostname==$taskNode \
-//   --restart-condition none \
-//   --mount type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly \
-//   docker:25.0.5-cli-alpine3.20 sh -c "$execCommand"
-
-// # While loop here
-// waitForServiceComplete $execServiceName
-
 // docker service logs $execServiceName

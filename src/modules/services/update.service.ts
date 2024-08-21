@@ -30,7 +30,6 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
 
   const serviceList = await dockerApiServiceLs(filterList);
   if (serviceList.length === 0) {
-    // LOG - что сервис не найден
     logWarn('updateServiceExec.NOT_FOUND', {
       params,
     });

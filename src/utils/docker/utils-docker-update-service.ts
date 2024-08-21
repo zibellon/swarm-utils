@@ -70,6 +70,7 @@ async function dockerUpdateServiceItem(serviceItem: DockerApiServiceLsItem, para
     constraint: `node.role==manager`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+    execShell: 'sh',
     execCommand: execCommand,
   });
   // WAIT FOR SERVICE COMPLETE

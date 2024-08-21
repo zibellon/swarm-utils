@@ -220,8 +220,11 @@ export type DockerApiServiceCreateParams = {
   constraint: string; // node.hostname==$taskNode, node.id==$nodeId
   'restart-condition': string; // none
   detach: boolean; // true
-  mountList: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
+  entrypoint?: string; // "/bin/sh"
+  mountList?: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
+  envList?: string[]; // BACKUP_CRON_EXPRESSION=\"0 0 5 31 2 ?\", BACKUP_RETENTION_DAYS=5
   image: string; // docker:25.0.5-cli-alpine3.20
+  execShell?: 'sh' | 'bash';
   execCommand?: string;
 };
 export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {
@@ -231,19 +234,38 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
   }
   cmd += ` --name ${params.name}`;
   cmd += ` --mode ${params.mode}`;
-  if (typeof params.replicas === 'number' && params.replicas > 0) {
-    cmd += ` --replicas ${params.replicas}`;
-  } else if (params.mode === 'replicated') {
-    cmd += ` --replicas 1`;
+  if (params.mode === 'replicated') {
+    let replicasCount = 1;
+    if (typeof params.replicas === 'number' && params.replicas > 0) {
+      replicasCount = params.replicas;
+    }
+    cmd += ` --replicas ${replicasCount}`;
   }
   cmd += ` --constraint ${params.constraint}`;
   cmd += ` --restart-condition ${params['restart-condition']}`;
-  for (const mount of params.mountList) {
-    cmd += ` --mount ${mount}`;
+  if (typeof params.entrypoint === 'string' && params.entrypoint.length > 0) {
+    cmd += ` --entrypoint ${params.entrypoint}`;
+  }
+  if (typeof params.envList === 'object' && Array.isArray(params.envList)) {
+    for (const env of params.envList) {
+      if (env.length > 0) {
+        cmd += ` --env ${env}`;
+      }
+    }
+  }
+  if (typeof params.mountList === 'object' && Array.isArray(params.mountList)) {
+    for (const mount of params.mountList) {
+      if (mount.length > 0) {
+        cmd += ` --mount ${mount}`;
+      }
+    }
   }
   cmd += ` ${params.image}`;
-  if (typeof params.execCommand === 'string') {
-    cmd += ` sh -c "${params.execCommand}"`;
+  if (typeof params.execCommand === 'string' && params.execCommand.length > 0) {
+    if (typeof params.execShell === 'string') {
+      cmd += ` ${params.execShell}`;
+    }
+    cmd += ` -c "${params.execCommand}"`;
   }
   return cmd;
 }
