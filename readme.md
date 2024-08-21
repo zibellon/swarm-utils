@@ -78,7 +78,7 @@
 26. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
-# Основные labels
+# Список LABELS - для SERVICE
 1. swarm-utils.clean
    1. enable=true/false
    2. exec
@@ -174,11 +174,11 @@
    3. Список labels
       1. clean.enable
       2. clean.image.enable
-      3. clean.image.timeout-ms
+      3. clean.image.timeout
       4. clean.builder.enable
-      5. clean.builder.timeout-ms
+      5. clean.builder.timeout
       6. clean.container.enable
-      7. clean.container.timeout-ms
+      7. clean.container.timeout
       8. clean.token-list
 9. API. Добавить метод: GET /service/status (info)
    1.  Такие-же права доступа
@@ -188,6 +188,8 @@
     2.  Если указан этот параметр - работа ведется сразу по всем доступным Services (На основе токена и labels=token-list)
 11. API. Во все методы - добавить параметр waitRes=true/false
     1.  Если ждать ответ не надо - запускать без await. И сразу отдать res: процесс запущен
+12. Добавить в ENV / labels для каждого сервиса - сколько живут бэкапы
+    1.  Сейчас стоит ХАРДКОД - 5 дней
 
 ---
 
