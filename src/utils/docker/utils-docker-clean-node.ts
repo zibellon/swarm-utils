@@ -9,27 +9,21 @@ import {
   nameLock,
 } from '../utils-names';
 import { dockerServiceGetStatusInfo, dockerWaitForServiceComplete } from './utils-docker';
-import {
-  dockerApiInspectNode,
-  DockerApiNodeLsItem,
-  dockerApiServiceCreate,
-  dockerApiServiceRemove,
-} from './utils-docker-api';
+import { DockerApiNodeLsItem, dockerApiServiceCreate, dockerApiServiceRemove } from './utils-docker-api';
 
 export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   for (const nodeItem of nodeList) {
-    const nodeKey = `${nodeItem.ID}`;
-    const nodeInspectInfo = await dockerApiInspectNode(nodeItem.ID);
+    // Потом пригодится - для получения списка labels
+    // const nodeInspectInfo = await dockerApiInspectNode(nodeItem.ID);
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT +
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT +
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT +
       getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
-
     const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
 
-    const lockKey = nameLock(nodeKey);
+    const lockKey = nameLock(nodeItem.ID);
     await lockResource
       .acquire(
         lockKey,
@@ -42,7 +36,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
         }
       )
       .catch((err) => {
-        logError('dockerCleanNodeList.ERR', err, {
+        logError('dockerCleanNodeList.nodeItem.ERR', err, {
           nodeItem,
         });
       });
