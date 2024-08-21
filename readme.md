@@ -153,7 +153,16 @@
 8. Использовать node-labels. Чтобы настроить доступы к Nodes и настроить timeout
    1. Сколько времени дается на exec - для очистки NODE
    2. Какие пользователи, имеют права доступа на очистку этой NODE
-9. API. Добавить метод: GET /Service/status (info)
+   3. Список labels
+      1. clean.enable
+      2. clean.image.enable
+      3. clean.image.timeout-ms
+      4. clean.builder.enable
+      5. clean.builder.timeout-ms
+      6. clean.container.enable
+      7. clean.container.timeout-ms
+      8. clean.token-list
+9. API. Добавить метод: GET /service/status (info)
    1.  Такие-же права доступа
    2.  Возвращает информацию по сервисы ?? Вместе с логами ??
 10. API. В методы: clean/backup - добавить параметр all=true
