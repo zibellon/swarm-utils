@@ -2,8 +2,9 @@ class ProcessENV {
   //Порт для запуска самого сервера
   public SWARM_UTILS_SERVER_PORT = 3000;
 
-  public SWARM_UTILS_IS_CRON_BACKUP = true; // Делать бэкап по кроне
-  public SWARM_UTILS_IS_CRON_CLEAN = true; // Производить чистку кластера по кроне
+  public SWARM_UTILS_IS_CRON_BACKUP_SERVICE = true; // Делать бэкап по кроне - бэкап сервисов
+  public SWARM_UTILS_IS_CRON_CLEAN_SERVICE = true; // Производить чистку кластера по кроне (SERVICES)
+  public SWARM_UTILS_IS_CRON_CLEAN_NODE = true; // Производить чистку кластера по кроне (NODES)
   public SWARM_UTILS_CRON_EXPR = '* * * * *'; // Интервал работы кроны (Cron string)
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = 'docker:25.0.5-cli-alpine3.20'; // Название docker-cli image, который будет запускаться на каждой NODE
@@ -53,11 +54,14 @@ export function getProcessEnv(): ProcessENV {
     if (typeof process.env.SWARM_UTILS_SERVER_PORT === 'string') {
       processENV.SWARM_UTILS_SERVER_PORT = Number(process.env.SWARM_UTILS_SERVER_PORT);
     }
-    if (typeof process.env.SWARM_UTILS_IS_CRON_BACKUP === 'string') {
-      processENV.SWARM_UTILS_IS_CRON_BACKUP = process.env.SWARM_UTILS_IS_CRON_BACKUP === 'true';
+    if (typeof process.env.SWARM_UTILS_IS_CRON_BACKUP_SERVICE === 'string') {
+      processENV.SWARM_UTILS_IS_CRON_BACKUP_SERVICE = process.env.SWARM_UTILS_IS_CRON_BACKUP_SERVICE === 'true';
     }
-    if (typeof process.env.SWARM_UTILS_IS_CRON_CLEAN === 'string') {
-      processENV.SWARM_UTILS_IS_CRON_CLEAN = process.env.SWARM_UTILS_IS_CRON_CLEAN === 'true';
+    if (typeof process.env.SWARM_UTILS_IS_CRON_CLEAN_SERVICE === 'string') {
+      processENV.SWARM_UTILS_IS_CRON_CLEAN_SERVICE = process.env.SWARM_UTILS_IS_CRON_CLEAN_SERVICE === 'true';
+    }
+    if (typeof process.env.SWARM_UTILS_IS_CRON_CLEAN_NODE === 'string') {
+      processENV.SWARM_UTILS_IS_CRON_CLEAN_NODE = process.env.SWARM_UTILS_IS_CRON_CLEAN_NODE === 'true';
     }
     if (typeof process.env.SWARM_UTILS_CRON_EXPR === 'string') {
       processENV.SWARM_UTILS_CRON_EXPR = process.env.SWARM_UTILS_CRON_EXPR;

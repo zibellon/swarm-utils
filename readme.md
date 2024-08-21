@@ -26,56 +26,58 @@
    2. BACKUP
 
 # ENV_LIST
-2. SWARM_UTILS_IS_CRON_BACKUP=true
-   1. Делать бэкап по кроне
-3. SWARM_UTILS_IS_CRON_CLEAN=true
-   1. Производить чистку кластера по кроне
-4. SWARM_UTILS_CRON_EXPR=* * * * *
+2. SWARM_UTILS_IS_CRON_BACKUP_SERVICE=true
+   1. Делать бэкап по кроне - бэкап сервисов
+3. SWARM_UTILS_IS_CRON_CLEAN_SERVICE=true
+   1. Производить чистку кластера по кроне (SERVICES)
+4. SWARM_UTILS_IS_CRON_CLEAN_NODE=true
+   1. Производить чистку кластера по кроне (NODES)
+5. SWARM_UTILS_CRON_EXPR=* * * * *
    1. Интервал работы кроны (Cron string)
-5. SWARM_UTILS_ADMIN_TOKEN_LIST=tokenA,tokenB,tokenC,
+6. SWARM_UTILS_ADMIN_TOKEN_LIST=tokenA,tokenB,tokenC,
    1. Список из токенов, которае имею админ-права
-6. SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
+7. SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
    1. Название docker-cli image, который будет запускаться на каждой `NODE`
-7. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT
+8. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT
    1. Сколько времени на EXEC команду в момент BACKUP_SERVICE
-8. SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT
+9.  SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT
    1. Сколько времени на STOP команду в момент BACKUP_SERVICE
-9.  SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
+10. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
     1.  Сколько времени на UPLOAD команду в момент BACKUP_SERVICE
-10. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
+11. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
     1.  Сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
-11. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
+12. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
     1.  Сколько времени на EXEC команду в момент CLEAN_SERVICE
-12. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
+13. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
     1.  Сколько времени на UPDATE_SERVICE
-13. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT
+14. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT
     1.  Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
-14. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT
+15. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT
     1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
-15. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
+16. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
     1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
-16. SWARM_UTILS_LOCK_TIMEOUT=10_000
+17. SWARM_UTILS_LOCK_TIMEOUT=10_000
    1. 10 секунд - сколько времени на уствновку блокировки
-17. SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME=630_000
+18. SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME=630_000
    1. 10 минут 30 сек - сколько суммарно времени
-18. SWARM_UTILS_LOCK_MAX_EXECUTION_TIME=600_000
+19. SWARM_UTILS_LOCK_MAX_EXECUTION_TIME=600_000
     1.  10 минут - сколько может выполняться BASH script
-19. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+20. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
     1.  Доменное имя где находится облако S3
-20. SWARM_UTILS_S3_HTTPS=true
+21. SWARM_UTILS_S3_HTTPS=true
     1.  Использовать HTTPS или нет
     2.  Если нет - подключение будет идти через http://
-21. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+22. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
     1.  Название игслуе - куда заливать бэкап
-22. SWARM_UTILS_S3_ACCESS_KEY=...
+23. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-23. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+24. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-24. SWARM_UTILS_REGISTRY_USER=root
+25. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
-25. SWARM_UTILS_REGISTRY_PASSWORD=...
+26. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-26. SWARM_UTILS_REGISTRY_URL=domain.com
+27. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Список LABELS - для SERVICE

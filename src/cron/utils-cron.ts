@@ -14,26 +14,30 @@ export async function initCron() {
     if (isCronProgress === false) {
       isCronProgress = true;
 
-      await cronCleanNodeList(dateCron).catch((err) => {
-        logError('CRON.cronCleanNodeList.ERR', err, {
-          dateCron,
+      if (getProcessEnv().SWARM_UTILS_IS_CRON_CLEAN_NODE === true) {
+        await cronCleanNodeList(dateCron).catch((err) => {
+          logError('CRON.cronCleanNodeList.ERR', err, {
+            dateCron,
+          });
         });
-      });
+      }
 
-      await cronCleanServiceList(dateCron).catch((err) => {
-        logError('CRON.cronCleanServiceList.ERR', err, {
-          dateCron,
+      if (getProcessEnv().SWARM_UTILS_IS_CRON_CLEAN_SERVICE === true) {
+        await cronCleanServiceList(dateCron).catch((err) => {
+          logError('CRON.cronCleanServiceList.ERR', err, {
+            dateCron,
+          });
         });
-      });
+      }
 
-      await cronBackupServiceList(dateCron).catch((err) => {
-        logError('CRON.cronBackupServiceList.ERR', err, {
-          dateCron,
+      if (getProcessEnv().SWARM_UTILS_IS_CRON_BACKUP_SERVICE === true) {
+        await cronBackupServiceList(dateCron).catch((err) => {
+          logError('CRON.cronBackupServiceList.ERR', err, {
+            dateCron,
+          });
         });
-      });
+      }
     }
   });
-
   cronJob.start();
 }
-// docker service logs $execServiceName
