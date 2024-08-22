@@ -2,28 +2,32 @@
 Один контейнер с утилитами для обслуживания кластера DOCKER-SWARM
 
 # Основные функции
-1. backup
+1. clean-node
+   1. Удалить все EXITED/STOPPED/COMPLETED containers: docker container prune -f
+   2. Удаление ненужных images: docker image prune -f -a
+   3. Очистка кэша билдера: docker builder prune -f
+   4. Запуск: CRON
+2. backup-service
    1. Резервное копирование
-   2. Загрузка копий на S3 хранилище (Через offen-backup)
+   2. Работает только на service
+   3. Загрузка копий на S3 хранилище (Через [offen-backup](https://github.com/offen/docker-volume-backup))
+   4. Запуск: CRON / API
+3. clean-service
+   1. Очистка одного или нескольких сервисов. (Например - registry, smtp cache)
+   2. Параметры API запроса
+      1. token - обязательный параметр
+      2. serviceName - обязательный параметр (stack-name_service-name)
    3. Запуск: CRON / API
-2. clean
-   1. Очистка кластера
-   2. Удалить все EXITED/STOPPED/COMPLETED containers: docker container prune -f
-   3. Удаление ненужных images: docker image prune -f -a
-   4. Очистка кэша билдера: docker builder prune -f
-   5. Запуск: CRON / API
-3. update
+4. update-service
    1. Перезапуск (Обновление) сервисов. Через команду docker service update SERVICE_NAME
-   2. Можно указать: token, service, image?
-   3. token, service - обязательный параметр
+   2. Можно указать: serviceName, image?
+   3. Параметры API запроса
+      1. token - обязательный параметр
+      2. serviceName - обязательный параметр (stack-name_service-name)
+      3. image - необязательный параметр. Полное название image. image-name:tag
+      4. isRegistryAuthBody - необязательный параметр. true/false
+         1. На данный момент - зависит от ENV переменных SWARM_UTILS_REGISTRY_*
    4. Запуск: API
-
-# Особенности и как работает
-1. Бэкап и очистку - можно запустить по API
-2. Бэкап name: nodeName_volumeName_date
-3. Бэкап + Очистка идут по одной кроне
-   1. CLEAN
-   2. BACKUP
 
 # ENV_LIST
 2. SWARM_UTILS_IS_CRON_BACKUP_SERVICE=true
@@ -80,7 +84,8 @@
 27. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
-# Список LABELS - для SERVICE
+# Список LABELS
+## Для SERVICE
 1. swarm-utils.clean
    1. enable=true/false
    2. exec
@@ -94,28 +99,87 @@
 3. swarm-utils.update
    1. token
 
+## Для NODE
+1. swarm-utils.clean
+   1. enable=true/false
+   2. exec
+   3. token
+2. swarm-utils.backup
+   1. enable=true/false
+   2. exec
+   3. volume-list=volume1,volume2,volume3,...
+   4. token
+
 # Права доступа по API - првоеряется через query "token"
-1. Админы - список токенов указан через ENV `SWARM_UTILS_ADMIN_TOKEN_LIST`
+1. Админы. Cписок токенов указан через ENV `SWARM_UTILS_ADMIN_TOKEN_LIST`
    1. Могут делать ВСЕ
-   2. Не зависят от docker.labels.token
+   2. Не зависят от `labels.token`
 2. Все остальные пользователи
    1. Могут делать ВСЕ
-   2. Зависят от docker.labels.token
+   2. Зависят от `labels.token`
    3. Работают только с теми контейнерами, к которым у них есть доступ
 
-# Конкурентность
-1. Clean. Mutex: clean_node_service
-   1. all. (for loop nodeList) (Cron/API)
-   2. specific-node (API)
-   3. specific-service (API)
-2. Backup. Mutex: backup_service
-   1. all. (for loop services) (Cron/API)
-   2. specific-service (API)
-3. Update. Mutex: update_service
-   1. specific-service (API)
+# Особенности и как работает
+1. Бэкап и очистку - можно запустить по API
+2. Бэкап name: nodeName_volumeName_date
+3. Бэкап + Очистка идут по одной кроне
+   1. CLEAN
+   2. BACKUP
 
-## Конкурентность. Mutex-timing. Добавить в ENV
-1. Время на блокиррку - 2 секунду
+# Конкурентность
+## Ситуация (1)
+1. Через API запустили clean-service - service_A
+2. Запустился процесс. Процесс займет условно 30 секунд
+3. Через 5 секунд - стартует CRON для очситки всех сервисов
+4. И запускает очситку на service_A
+5. Итог: НЕИЗВЕСТНО. Но ничего хорошего...
+
+## Решение ситуации (1)
+1. На все действия с конкретным service, node - ставится MUTEX
+2. На уровне кода в TypeScript (JS) NodeJS - используется [async-lock](https://www.npmjs.com/package/async-lock)
+3. Ключ для блокировки - название сервиса или название node
+4. И только после успешной установки блокировки - NodeJS идет выполнять работу с сервисом
+
+## Ситуация (2)
+1. Через API запустили clean-service - service_A
+2. Запустился процесс. Процесс займет условно 30 секунд
+3. NodeJS - упал, перезапустился, сервер перезапустился
+4. Итог: async-lock сбросился
+5. Через 5 секунд - стартует CRON для очситки всех сервисов
+6. И запускает очситку на service_A
+7. Итог: НЕИЗВЕСТНО. Но ничего хорошего...
+
+## Решение ситуации (2)
+1. очистка сервиса - это exec команда на docker container
+2. Чтобы выполнить docker exec - нужно иметь доступ к docker.sock, где запущен контейнер
+3. Мы работаем в условиях - DockerSwarm cluster (10 отдельных серверов)
+4. Чтобы выполнить docker-exec на Node_A
+   1. Создается service с образом docker-cli на указанной Node
+   2. Название сервиса - `CONSTANT+SERVICE_NAME`
+   3. Монтирование docker.sock - через volume
+   4. Как параметр запуска: docker exec CONTAINER_ID /bin/sh ...
+5. Создать более обного сервса с одинаковым названием - НЕЛЬЗЯ (На уровне docker engine)
+
+## Ситуация (3)
+1. Через API запустили clean-service - service_A
+2. Запустился процесс. Процесс займет условно 30 секунд
+3. NodeJS - упал, перезапустился, сервер перезапустился
+4. Итог: async-lock сбросился
+5. Через 5 секунд снова кинули запрос на очистку сервиса - service_A
+6. LOCK - поставился (Так-как он сбросился после перезапуска сервиса)
+7. А новый сервис - создать не можем
+8. Так как - на уровне docker engine запрещено создавать сервисы с одинаковым названием
+
+## Решение ситуации (3)
+1. Перед запуском нового сервиса - для работы с service_A - проверка и удаление
+2. Проверить и удалить существующие ВСЕ сервисы для service_A
+   1. Все сервисы NOT_EXIST - продолжаем
+   2. Некоторые сервисы EXIST && canRemove (isComplete) - завершаем их и продолжаем
+   3. Есть хоть один сервис который EXIST && !canRemove - выброс с ошибкой
+3. Это значит - что в один момент времени с service_A может происходить только ОДНА операция
+
+## Конкурентность. Mutex-timing
+1. Время на блокиррку - 5 секунд
 2. Время на выполнение - 10 минут
 3. Общее время - 10 минут 10 секунд
 
@@ -125,7 +189,7 @@
 3. Один из запрсоов - сможет поставить LOCK и начать процесс обновления
 4. Второй из запросов - вывалится с ошибкой, так как не сможет поставить LOCK
 
-# Основные команды докера
+# Основные команды DockerApi
 1. docker node ls --format json
 2. docker volume ls -f driver=local --format json
 3. docker service ls --filter label="LABEL" --format json
@@ -194,7 +258,5 @@
     1.  Сейчас стоит ХАРДКОД - 5 дней
 
 ---
-
-Backup - все в одном цикле. Снача exec, stop, offen-backup, restore(if stop)
 
 Работа ведётся со списком сервисов - которые были получены вначале! Исполбзовать Map
