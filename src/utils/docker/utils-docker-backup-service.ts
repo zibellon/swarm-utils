@@ -73,21 +73,18 @@ async function dockerBackupServiceItem(
   inspectServiceInfo: DockerApiInspectServiceItem,
   taskList: DockerApiServicePsItem[]
 ) {
-  // 2. exec
-  // 3. stop=true/false
-  // 4. volume-list=volume1,volume2,volume3,...
-
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRemoveSupportServices(serviceItem.Name);
 
   // Replicas: '1/1'
-  const currentDesiredReplicas = Number(serviceItem.Replicas.split('/')[1]);
+  const isReplicated = serviceItem.Mode === 'replicated';
+  const currentDesiredReplicas = isReplicated ? Number(serviceItem.Replicas.split('/')[1]) : null;
 
   // NodeId=volume1,volume2,volume3,...
   const nodeVolumeListMap = new Map<string, Set<string>>();
 
   //---------
-  // VOLUME-LIST
+  // VOLUME-LIST, COLLECT
   //---------
   const volumeListLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.volume-list' && el[1].length > 0;
@@ -124,6 +121,10 @@ async function dockerBackupServiceItem(
   });
   if (execLabelObj) {
     for (const taskItem of taskList) {
+      // Проверка и удаление всех сервисов + ThrowError
+      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+      // Непосредственно EXEC
       await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
     }
   }
@@ -134,7 +135,11 @@ async function dockerBackupServiceItem(
   const stopLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.stop' && el[1] === 'true';
   });
-  if (stopLabelObj) {
+  if (isReplicated && stopLabelObj) {
+    // Проверка и удаление всех сервисов + ThrowError
+    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+    // Непосредственно STOP
     await dockerBackupServiceStop(serviceItem);
   }
 
@@ -143,6 +148,10 @@ async function dockerBackupServiceItem(
   //---------
   if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
+      // Проверка и удаление всех сервисов + ThrowError
+      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+      // Непосредственно UPLOAD
       await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
     }
   }
@@ -150,7 +159,11 @@ async function dockerBackupServiceItem(
   //---------
   // RESTORE (Only IF STOP)
   //---------
-  if (stopLabelObj) {
+  if (isReplicated && stopLabelObj && currentDesiredReplicas !== null) {
+    // Проверка и удаление всех сервисов + ThrowError
+    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+    // Непосредственно START
     await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
   }
 }
