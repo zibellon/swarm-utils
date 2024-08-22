@@ -1,6 +1,6 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError, logWarn } from '../utils-logger';
+import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
 import {
@@ -10,6 +10,7 @@ import {
   DockerApiServiceLsItem,
   dockerApiServiceUpdateCmd,
 } from './utils-docker-api';
+import { dockerLogInspectServiceItem } from './utils-docker-logs';
 
 type DockerUpdateServiceParams = {
   registryAuth: boolean;
@@ -20,6 +21,11 @@ export async function dockerUpdateServiceList(
   params: DockerUpdateServiceParams
 ) {
   for (const serviceItem of serviceList) {
+    logInfo('dockerUpdateServiceList.serviceItem.INIT', {
+      params,
+      serviceItem,
+    });
+
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
@@ -35,16 +41,28 @@ export async function dockerUpdateServiceList(
       continue;
     }
 
+    // TODO - отдельная функция
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
     const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
-
     const lockKey = nameLock(serviceItem.Name);
+
+    const logData = {
+      lockKey,
+      maxExecutionTime,
+      maxOccupationTime,
+      params,
+      serviceItem,
+      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+    };
+
     await lockResource
       .acquire(
         lockKey,
         async () => {
+          logInfo('dockerUpdateServiceList.serviceItem.lock.OK', logData);
           await dockerUpdateServiceItem(serviceItem, inspectServiceInfo, params);
+          logInfo('dockerUpdateServiceList.serviceItem.OK', logData);
         },
         {
           maxExecutionTime,
@@ -52,9 +70,7 @@ export async function dockerUpdateServiceList(
         }
       )
       .catch((err) => {
-        logError('dockerUpdateServiceList.serviceItem.ERR', err, {
-          serviceItem,
-        });
+        logError('dockerUpdateServiceList.serviceItem.ERR', err, logData);
       });
   }
 }
@@ -64,6 +80,13 @@ async function dockerUpdateServiceItem(
   inspectServiceInfo: DockerApiInspectServiceItem,
   params: DockerUpdateServiceParams
 ) {
+  const logData = {
+    params,
+    serviceItem,
+    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+  };
+  logInfo('dockerUpdateServiceItem.INIT', logData);
+
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRemoveSupportServices(serviceItem.Name);
 
@@ -73,10 +96,21 @@ async function dockerUpdateServiceItem(
     registryAuth: params.registryAuth,
   });
 
+  logInfo('dockerUpdateServiceItem.EXEC_COMMAND', {
+    ...logData,
+    execCommand,
+  });
+
   //---------
   //EXEC
   //---------
   const updateServiceServiceName = nameUpdateService(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    execCommand,
+    serviceName: updateServiceServiceName,
+  };
+  logInfo('dockerUpdateServiceItem.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: updateServiceServiceName,
@@ -89,6 +123,8 @@ async function dockerUpdateServiceItem(
     execShell: 'sh',
     execCommand: execCommand,
   });
+  logInfo('dockerUpdateServiceItem.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(updateServiceServiceName, getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT);
+  logInfo('dockerUpdateServiceItem.exec.OK', logData2);
 }

@@ -1,6 +1,6 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError, logWarn } from '../utils-logger';
+import { logError, logInfo, logWarn } from '../utils-logger';
 import {
   nameBackupServiceExec,
   nameBackupServiceScaleDown,
@@ -21,9 +21,14 @@ import {
   DockerApiServicePsItem,
   dockerApiServiceScaleCmd,
 } from './utils-docker-api';
+import { dockerLogInspectServiceItem, dockerLogInspectTaskItem } from './utils-docker-logs';
 
 export async function dockerBackupServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
+    logInfo('dockerBackupServiceList.serviceItem.INIT', {
+      serviceItem,
+    });
+
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
@@ -59,6 +64,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       continue;
     }
 
+    // TODO - отдельная функция
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT * taskList.length +
       getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT * taskList.length +
@@ -66,13 +72,24 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT * taskList.length +
       getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
     const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
-
     const lockKey = nameLock(serviceItem.Name);
+
+    const logData = {
+      lockKey,
+      maxExecutionTime,
+      maxOccupationTime,
+      serviceItem,
+      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+      taskList,
+    };
+
     await lockResource
       .acquire(
         lockKey,
         async () => {
+          logInfo('dockerBackupServiceList.serviceItem.lock.OK', logData);
           await dockerBackupServiceItem(serviceItem, inspectServiceInfo, taskList);
+          logInfo('dockerBackupServiceList.serviceItem.OK', logData);
         },
         {
           maxExecutionTime,
@@ -80,9 +97,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
         }
       )
       .catch((err) => {
-        logError('dockerBackupServiceList.serviceItem.ERR', err, {
-          serviceItem,
-        });
+        logError('dockerBackupServiceList.serviceItem.ERR', err, logData);
       });
   }
 }
@@ -92,8 +107,18 @@ async function dockerBackupServiceItem(
   inspectServiceInfo: DockerApiInspectServiceItem,
   taskList: DockerApiServicePsItem[]
 ) {
+  const logData = {
+    serviceItem,
+    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+  };
+  logInfo('dockerBackupServiceItem.INIT', logData);
+
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+  //---------
+  //PREPARE-ZONE
+  //---------
 
   // Replicas: '1/1'
   const isReplicated = serviceItem.Mode === 'replicated';
@@ -102,11 +127,13 @@ async function dockerBackupServiceItem(
   // NodeId=volume1,volume2,volume3,...
   const nodeVolumeListMap = new Map<string, Set<string>>();
 
-  //---------
-  // VOLUME-LIST, COLLECT
-  //---------
+  //volume-list, collect
   const volumeListLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.volume-list' && el[1].length > 0;
+  });
+  logInfo('dockerBackupServiceItem.prepareZone.volumeList.INIT', {
+    ...logData,
+    volumeListLabelObj,
   });
   if (volumeListLabelObj) {
     const volumeList = volumeListLabelObj[1].split(',');
@@ -137,6 +164,12 @@ async function dockerBackupServiceItem(
       nodeVolumeListMap.set(taskInspect.NodeID, existNodeVolumeListSet);
     }
   }
+  logInfo('dockerBackupServiceItem.prepareZone.OK', {
+    ...logData,
+    isReplicated,
+    currentDesiredReplicas,
+    nodeVolumeListMap: [...nodeVolumeListMap.entries()],
+  });
 
   //---------
   // EXEC
@@ -144,18 +177,26 @@ async function dockerBackupServiceItem(
   const execLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.exec' && el[1].length > 0;
   });
+  logInfo('dockerBackupServiceItem.exec.execLabelObj.INIT', {
+    ...logData,
+    execLabelObj,
+  });
   if (execLabelObj) {
     for (const taskItem of taskList) {
+      const logData2 = {
+        ...logData,
+        execLabelObj,
+        taskItem,
+      };
       try {
+        logInfo('dockerBackupServiceItem.taskItem.exec.INIT', logData2);
         // Проверка и удаление всех сервисов + ThrowError
         await dockerCheckAndRemoveSupportServices(serviceItem.Name);
         // Непосредственно EXEC
         await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
+        logInfo('dockerBackupServiceItem.taskItem.exec.OK', logData2);
       } catch (err) {
-        logError('dockerBackupServiceItem.exec.ERR', err, {
-          serviceItem,
-          taskItem,
-        });
+        logError('dockerBackupServiceItem.taskItem.exec.ERR', err, logData2);
       }
     }
   }
@@ -166,16 +207,26 @@ async function dockerBackupServiceItem(
   const stopLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.stop' && el[1] === 'true';
   });
+  logInfo('dockerBackupServiceItem.stop.stopLabelObj.INIT', {
+    ...logData,
+    isReplicated,
+    stopLabelObj,
+  });
   if (isReplicated && stopLabelObj) {
+    const logData2 = {
+      ...logData,
+      isReplicated,
+      stopLabelObj,
+    };
     try {
+      logInfo('dockerBackupServiceItem.stop.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
       await dockerCheckAndRemoveSupportServices(serviceItem.Name);
       // Непосредственно STOP
       await dockerBackupServiceStop(serviceItem);
+      logInfo('dockerBackupServiceItem.stop.OK', logData2);
     } catch (err) {
-      logError('dockerBackupServiceItem.stop.ERR', err, {
-        serviceItem,
-      });
+      logError('dockerBackupServiceItem.stop.ERR', err, logData2);
     }
   }
 
@@ -184,15 +235,20 @@ async function dockerBackupServiceItem(
   //---------
   if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
+      const logData2 = {
+        ...logData,
+        nodeId,
+        volumeList: [...volumeSet],
+      };
       try {
+        logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
         // Проверка и удаление всех сервисов + ThrowError
         await dockerCheckAndRemoveSupportServices(serviceItem.Name);
         // Непосредственно UPLOAD
         await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
+        logInfo('dockerBackupServiceItem.nodeId.upload.OK', logData2);
       } catch (err) {
-        logError('dockerBackupServiceItem.upload.ERR', err, {
-          serviceItem,
-        });
+        logError('dockerBackupServiceItem.nodeId.upload.ERR', err, logData2);
       }
     }
   }
@@ -201,15 +257,21 @@ async function dockerBackupServiceItem(
   // START (Only IF STOP)
   //---------
   if (isReplicated && stopLabelObj && currentDesiredReplicas !== null) {
+    const logData2 = {
+      ...logData,
+      isReplicated,
+      stopLabelObj,
+      currentDesiredReplicas,
+    };
     try {
+      logInfo('dockerBackupServiceItem.start.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
       await dockerCheckAndRemoveSupportServices(serviceItem.Name);
       // Непосредственно START
       await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
+      logInfo('dockerBackupServiceItem.start.OK', logData2);
     } catch (err) {
-      logError('dockerBackupServiceItem.start.ERR', err, {
-        serviceItem,
-      });
+      logError('dockerBackupServiceItem.start.ERR', err, logData2);
     }
   }
 }
@@ -219,8 +281,15 @@ async function dockerBackupServiceExec(
   taskItem: DockerApiServicePsItem,
   execCommand: string
 ) {
-  const taskInspect = await dockerApiInspectTask(taskItem.ID);
-  if (!taskInspect) {
+  const logData = {
+    serviceItem,
+    taskItem,
+    execCommand,
+  };
+  logInfo('dockerBackupServiceExec.INIT', logData);
+
+  const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
+  if (!taskInspectInfo) {
     logWarn('dockerbackupServiceExec.taskInspect.NULL', {
       serviceItem,
       taskItem,
@@ -229,34 +298,63 @@ async function dockerBackupServiceExec(
   }
 
   // Получить id контейнера - в котором нужно сделать exec команду
-  const containerId = taskInspect.Status.ContainerStatus.ContainerID;
+  const containerId = taskInspectInfo.Status.ContainerStatus.ContainerID;
+  const nodeId = taskInspectInfo.NodeID;
+
+  logInfo('dockerBackupServiceExec.TASK_INSPECT', {
+    ...logData,
+    taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
+    containerId,
+    nodeId,
+  });
 
   //---------
   //EXEC
   //---------
   const execServiceName = nameBackupServiceExec(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    containerId,
+    nodeId,
+    serviceName: execServiceName,
+  };
+  logInfo('dockerBackupServiceExec.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: execServiceName,
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.id==${taskInspect.NodeID}`,
+    constraint: `node.id==${nodeId}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: 'sh',
     execCommand: `docker exec ${containerId} /bin/sh -c '${execCommand}'`, // From label
   });
+  logInfo('dockerBackupServiceExec.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(execServiceName, getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT);
+  logInfo('dockerBackupServiceExec.exec.OK', logData2);
 }
 
 async function dockerBackupServiceStop(serviceItem: DockerApiServiceLsItem) {
+  const logData = {
+    serviceItem,
+  };
+  logInfo('dockerBackupServiceStop.INIT', logData);
+
   const scaleDownCmd = dockerApiServiceScaleCmd(serviceItem.Name, 0);
+
   //---------
   //SCALE_DOWN
   //---------
   const scaleDownServiceName = nameBackupServiceScaleDown(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    scaleDownCmd,
+    serviceName: scaleDownServiceName,
+  };
+  logInfo('dockerBackupServiceStop.scaleDown.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: scaleDownServiceName,
@@ -269,8 +367,10 @@ async function dockerBackupServiceStop(serviceItem: DockerApiServiceLsItem) {
     execShell: 'sh',
     execCommand: scaleDownCmd,
   });
+  logInfo('dockerBackupServiceStop.scaleDown.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(scaleDownServiceName, getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT);
+  logInfo('dockerBackupServiceStop.scaleDown.OK', logData2);
 }
 
 async function dockerBackupServiceUploadVolumeList(
@@ -278,9 +378,16 @@ async function dockerBackupServiceUploadVolumeList(
   nodeId: string,
   volumeList: string[]
 ) {
-  const envList: string[] = [
+  const logData = {
+    serviceItem,
+    nodeId,
+    volumeList,
+  };
+  logInfo('dockerBackupServiceUploadVolumeList.INIT', logData);
+
+  const envList = [
     `BACKUP_CRON_EXPRESSION="0 0 5 31 2 ?"`,
-    `BACKUP_RETENTION_DAYS=5`,
+    `BACKUP_RETENTION_DAYS=5`, // TODO: перенести в ENV
     `BACKUP_COMPRESSION=gz`,
     `BACKUP_FILENAME=backup-${nodeId}-${serviceItem.Name}-%Y-%m-%dT%H-%M-%S.tar.gz`,
     `AWS_ENDPOINT=${getProcessEnv().SWARM_UTILS_S3_DOMAIN}`,
@@ -288,12 +395,20 @@ async function dockerBackupServiceUploadVolumeList(
     `AWS_ACCESS_KEY_ID=${getProcessEnv().SWARM_UTILS_S3_ACCESS_KEY}`,
     `AWS_SECRET_ACCESS_KEY=${getProcessEnv().SWARM_UTILS_S3_SECRET_ACCESS_KEY}`,
   ];
-
   const mappedVolumeList = volumeList.map((volumeName) => {
     return `type=volume,source=${volumeName},target=/backup/${volumeName}`; // type=volume,source=$volumeName,target=/backup/$volumeName
   });
 
+  //---------
+  //UPLOAD
+  //---------
   const uploadServiceName = nameBackupServiceTarUpload(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    uploadServiceName,
+    mappedVolumeList,
+  };
+  logInfo('dockerBackupServiceUploadVolumeList.upload.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: uploadServiceName,
@@ -306,19 +421,34 @@ async function dockerBackupServiceUploadVolumeList(
     mountList: mappedVolumeList,
     execCommand: 'backup && exit', // offen/docker-volume-backup:v2.43.0 -c 'backup && exit'
   });
+  logInfo('dockerBackupServiceUploadVolumeList.upload.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(
     uploadServiceName,
     getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
   );
+  logInfo('dockerBackupServiceUploadVolumeList.upload.OK', logData2);
 }
 
 async function dockerBackupServiceStart(serviceItem: DockerApiServiceLsItem, replicasCount: number) {
+  const logData = {
+    serviceItem,
+    replicasCount,
+  };
+  logInfo('dockerBackupServiceStart.INIT', logData);
+
   const scaleUpCmd = dockerApiServiceScaleCmd(serviceItem.Name, replicasCount);
+
   //---------
   //SCALE_UP
   //---------
   const scaleUpServiceName = nameBackupServiceScaleUp(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    scaleUpCmd,
+    serviceName: scaleUpServiceName,
+  };
+  logInfo('dockerBackupServiceStart.scaleUp.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: scaleUpServiceName,
@@ -331,6 +461,8 @@ async function dockerBackupServiceStart(serviceItem: DockerApiServiceLsItem, rep
     execShell: 'sh',
     execCommand: scaleUpCmd,
   });
+  logInfo('dockerBackupServiceStart.scaleUp.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(scaleUpServiceName, getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT);
+  logInfo('dockerBackupServiceStart.scaleUp.OK', logData2);
 }

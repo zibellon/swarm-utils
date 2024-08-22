@@ -9,9 +9,14 @@ import {
   DockerApiNodeLsItem,
   dockerApiServiceCreate,
 } from './utils-docker-api';
+import { dockerLogInspectNodeItem } from './utils-docker-logs';
 
 export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   for (const nodeItem of nodeList) {
+    logInfo('dockerCleanNodeList.nodeItem.INIT', {
+      nodeItem,
+    });
+
     // Потом пригодится - для получения списка labels
     let nodeInspectInfo: DockerApiInspectNodeItem | null = null;
     try {
@@ -42,19 +47,29 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       continue;
     }
 
+    // TODO - вынести в отдельную функцию
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT +
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT +
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT +
       getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
     const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
-
     const lockKey = nameLock(nodeItem.ID);
+
+    const logData = {
+      lockKey,
+      maxExecutionTime,
+      maxOccupationTime,
+      nodeItem,
+      nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
+    };
     await lockResource
       .acquire(
         lockKey,
         async () => {
+          logInfo('dockerCleanNodeList.nodeItem.lock.OK', logData);
           await dockerCleanNodeItem(nodeItem, nodeInspectInfo);
+          logInfo('dockerCleanNodeList.nodeItem.OK', logData);
         },
         {
           maxExecutionTime,
@@ -62,9 +77,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
         }
       )
       .catch((err) => {
-        logError('dockerCleanNodeList.nodeItem.ERR', err, {
-          nodeItem,
-        });
+        logError('dockerCleanNodeList.nodeItem.acquire.ERR', err, logData);
       });
   }
 }
@@ -72,6 +85,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
 async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInfo: DockerApiInspectNodeItem) {
   const logData = {
     nodeItem,
+    nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
   };
   logInfo('dockerCleanNodeItem.INIT', logData);
 
@@ -80,14 +94,22 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
   // Проверка и удаление всех сервисов + throwError
   await dockerCheckAndRemoveSupportServices(nodeKey);
 
+  logInfo('dockerCleanNodeItem.PROCESS', logData);
+
   //---------
-  //IMAGES
+  //IMAGE
   //---------
   try {
-    const cleanImagesServiceName = nameCleanNodeImages(nodeKey);
+    const cleanImageServiceName = nameCleanNodeImages(nodeKey);
+    const logData2 = {
+      ...logData,
+      serviceName: cleanImageServiceName,
+    };
+
+    logInfo('dockerCleanNodeItem.image.SERVICE_CREATE', logData2);
     await dockerApiServiceCreate({
       detach: true,
-      name: cleanImagesServiceName,
+      name: cleanImageServiceName,
       image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
       mode: 'replicated',
       replicas: 1,
@@ -97,17 +119,27 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       execShell: 'sh',
       execCommand: 'docker image prune -a -f',
     });
+    logInfo('dockerCleanNodeItem.image.WAIT_FOR_COMPLETE', logData2);
+
     // WAIT FOR SERVICE COMPLETE
-    await dockerWaitForServiceComplete(cleanImagesServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
+    await dockerWaitForServiceComplete(cleanImageServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
+
+    logInfo('dockerCleanNodeItem.image.OK', logData2);
   } catch (err) {
     logError('dockerCleanNodeItem.image.ERR', err, logData);
   }
 
   //---------
-  //BUILDER_CACHE
+  //BUILDER (cache)
   //---------
   try {
     const cleanBuilderServiceName = nameCleanNodeBuilder(nodeKey);
+    const logData2 = {
+      ...logData,
+      serviceName: cleanBuilderServiceName,
+    };
+
+    logInfo('dockerCleanNodeItem.builder.SERVICE_CREATE', logData2);
     await dockerApiServiceCreate({
       detach: true,
       name: cleanBuilderServiceName,
@@ -120,17 +152,24 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       execShell: 'sh',
       execCommand: 'docker builder prune -f',
     });
+    logInfo('dockerCleanNodeItem.builder.WAIT_FOR_COMPLETE', logData2);
     // WAIT FOR SERVICE COMPLETE
     await dockerWaitForServiceComplete(cleanBuilderServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
+    logInfo('dockerCleanNodeItem.builder.OK', logData2);
   } catch (err) {
     logError('dockerCleanNodeItem.builder.ERR', err, logData);
   }
 
   //---------
-  //EXIT_CONTAINERS
+  //CONTAINER (exited and others)
   //---------
   try {
     const cleanContainerServiceName = nameCleanNodeContainers(nodeKey);
+    const logData2 = {
+      ...logData,
+      serviceName: cleanContainerServiceName,
+    };
+    logInfo('dockerCleanNodeItem.container.SERVICE_CREATE', logData2);
     await dockerApiServiceCreate({
       detach: true,
       name: cleanContainerServiceName,
@@ -143,11 +182,13 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       execShell: 'sh',
       execCommand: 'docker container prune -f',
     });
+    logInfo('dockerCleanNodeItem.container.WAIT_FOR_COMPLETE', logData2);
     // WAIT FOR SERVICE COMPLETE
     await dockerWaitForServiceComplete(
       cleanContainerServiceName,
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
     );
+    logInfo('dockerCleanNodeItem.container.OK', logData2);
   } catch (err) {
     logError('dockerCleanNodeItem.container.ERR', err, logData);
   }

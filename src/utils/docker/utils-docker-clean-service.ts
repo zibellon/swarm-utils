@@ -12,9 +12,14 @@ import {
   dockerApiServicePs,
   DockerApiServicePsItem,
 } from './utils-docker-api';
+import { dockerLogInspectServiceItem, dockerLogInspectTaskItem } from './utils-docker-logs';
 
 export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
+    logInfo('dockerCleanServiceList.serviceItem.INIT', {
+      serviceItem,
+    });
+
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
@@ -54,13 +59,24 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT * taskList.length +
       getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
     const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
-
     const lockKey = nameLock(serviceItem.Name);
+
+    const logData = {
+      lockKey,
+      maxExecutionTime,
+      maxOccupationTime,
+      serviceItem,
+      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+      taskList,
+    };
+
     await lockResource
       .acquire(
         lockKey,
         async () => {
+          logInfo('dockerCleanServiceList.serviceItem.lock.OK', logData);
           await dockerCleanServiceItem(serviceItem, inspectServiceInfo, taskList);
+          logInfo('dockerCleanServiceList.serviceItem.OK', logData);
         },
         {
           maxExecutionTime,
@@ -68,9 +84,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         }
       )
       .catch((err) => {
-        logError('dockerCleanServiceList.serviceItem.ERR', err, {
-          serviceItem,
-        });
+        logError('dockerCleanServiceList.serviceItem.ERR', err, logData);
       });
   }
 }
@@ -80,9 +94,12 @@ async function dockerCleanServiceItem(
   inspectServiceInfo: DockerApiInspectServiceItem,
   taskList: DockerApiServicePsItem[]
 ) {
-  logInfo('dockerCleanServiceItem.INIT', {
+  const logData = {
     serviceItem,
-  });
+    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+  };
+  logInfo('dockerCleanServiceItem.INIT', logData);
+
   // 'traefik.http.routers.router-test-back-dev-http.entryPoints': 'web';
   // Поиск label - где такой ключ и есть значение
   const execLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
@@ -94,6 +111,10 @@ async function dockerCleanServiceItem(
     });
     return;
   }
+  logInfo('dockerCleanServiceItem.EXEC_LABEL_OBJ', {
+    ...logData,
+    execLabelObj,
+  });
 
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRemoveSupportServices(serviceItem.Name);
@@ -102,17 +123,20 @@ async function dockerCleanServiceItem(
   // EXEC
   //---------
   for (const taskItem of taskList) {
+    const logData2 = {
+      ...logData,
+      execLabelObj,
+      taskItem,
+    };
     try {
+      logInfo('dockerCleanServiceItem.taskItem.exec.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
       await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
       // Непосредственно EXEC
       await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
+      logInfo('dockerCleanServiceItem.taskItem.exec.OK', logData2);
     } catch (err) {
-      logError('dockerCleanServiceItem.exec.ERR', err, {
-        serviceItem,
-        taskItem,
-      });
+      logError('dockerCleanServiceItem.taskItem.exec.ERR', err, logData2);
     }
   }
 }
@@ -122,14 +146,16 @@ async function dockerCleanServiceItemExecOnTask(
   taskItem: DockerApiServicePsItem,
   execCommand: string
 ) {
-  logInfo('cronCleanServiceItemExecOnTask.INIT', {
+  const logData = {
     serviceItem,
     taskItem,
-  });
+    execCommand,
+  };
+  logInfo('dockerCleanServiceItemExecOnTask.INIT', logData);
 
-  const taskInspect = await dockerApiInspectTask(taskItem.ID);
-  if (!taskInspect) {
-    logWarn('cronCleanServiceItemExecOnTask.taskInspect.NULL', {
+  const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
+  if (!taskInspectInfo) {
+    logWarn('dockerCleanServiceItemExecOnTask.taskInspect.NULL', {
       serviceItem,
       taskItem,
     });
@@ -137,27 +163,42 @@ async function dockerCleanServiceItemExecOnTask(
   }
 
   // Получить id контейнера - в котором нужно сделать exec команду
-  const containerId = taskInspect.Status.ContainerStatus.ContainerID;
+  const containerId = taskInspectInfo.Status.ContainerStatus.ContainerID;
+  const nodeId = taskInspectInfo.NodeID;
+
+  logInfo('dockerCleanServiceItemExecOnTask.TASK_INSPECT', {
+    ...logData,
+    taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
+    containerId,
+    nodeId,
+  });
 
   //---------
   //EXEC
   //---------
   const cleanServiceExecServiceName = nameCleanServiceExec(serviceItem.Name);
+  const logData2 = {
+    ...logData,
+    serviceName: cleanServiceExecServiceName,
+  };
+  logInfo('dockerCleanServiceItemExecOnTask.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
     name: cleanServiceExecServiceName,
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.id==${taskInspect.NodeID}`,
+    constraint: `node.id==${nodeId}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: 'sh',
     execCommand: `docker exec ${containerId} /bin/sh -c '${execCommand}'`, // From label
   });
+  logInfo('dockerCleanServiceItemExecOnTask.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(
     cleanServiceExecServiceName,
     getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
   );
+  logInfo('dockerCleanServiceItemExecOnTask.exec.OK', logData2);
 }

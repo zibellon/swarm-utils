@@ -2,7 +2,6 @@ import { bashExec } from '../utils-bash';
 
 //---------
 //docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
-
 //---------
 export type DockerApiLoginParams = {
   user: string;
