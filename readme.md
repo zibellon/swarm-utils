@@ -62,26 +62,23 @@
     1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
 17. SWARM_UTILS_LOCK_TIMEOUT=10_000
    1. 10 секунд - сколько времени на уствновку блокировки
-18. SWARM_UTILS_LOCK_MAX_OCCUPATION_TIME=630_000
-   1. 10 минут 30 сек - сколько суммарно времени
-19. SWARM_UTILS_LOCK_MAX_EXECUTION_TIME=600_000
-    1.  10 минут - сколько может выполняться BASH script
-20. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+18. SWARM_UTILS_EXTRA_TIMEOUT=10_000
+    1.  Дополнительное время для блокировки. Задержки сети и ТД
+19. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
     1.  Доменное имя где находится облако S3
-21. SWARM_UTILS_S3_HTTPS=true
-    1.  Использовать HTTPS или нет
-    2.  Если нет - подключение будет идти через http://
-22. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+20. SWARM_UTILS_S3_HTTPS=true
+    1.  Использовать HTTPS или нет. Если нет - подключение будет идти через http://
+21. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
     1.  Название игслуе - куда заливать бэкап
-23. SWARM_UTILS_S3_ACCESS_KEY=...
+22. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-24. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+23. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-25. SWARM_UTILS_REGISTRY_USER=root
+24. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
-26. SWARM_UTILS_REGISTRY_PASSWORD=...
+25. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-27. SWARM_UTILS_REGISTRY_URL=domain.com
+26. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Список LABELS
