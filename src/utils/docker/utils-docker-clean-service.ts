@@ -15,8 +15,14 @@ import {
 
 export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
-    //TODO - работа с ошибками
-    const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
+    try {
+      inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    } catch (err) {
+      logError('dockerCleanServiceList.serviceItem.dockerApiInspectService.ERR', {
+        serviceItem,
+      });
+    }
     if (inspectServiceInfo === null) {
       logWarn('dockerCleanServiceList.serviceItem.inspectServiceInfo.NULL', {
         serviceItem,
@@ -24,13 +30,25 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       continue;
     }
 
-    //TODO - работа с ошибками
-    const taskList = await dockerApiServicePs(serviceItem.Name, [
-      {
-        key: 'desired-state',
-        value: 'Running', // Только АКТИВНЫЕ таски
-      },
-    ]);
+    let taskList: DockerApiServicePsItem[] | null = null;
+    try {
+      taskList = await dockerApiServicePs(serviceItem.Name, [
+        {
+          key: 'desired-state',
+          value: 'Running', // Только АКТИВНЫЕ таски
+        },
+      ]);
+    } catch (err) {
+      logError('dockerCleanServiceList.serviceItem.dockerApiServicePs.ERR', {
+        serviceItem,
+      });
+    }
+    if (taskList === null || taskList.length === 0) {
+      logWarn('dockerCleanServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
+        serviceItem,
+      });
+      continue;
+    }
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT * taskList.length +
@@ -65,9 +83,6 @@ async function dockerCleanServiceItem(
   logInfo('dockerCleanServiceItem.INIT', {
     serviceItem,
   });
-  // Проверка и удаление всех сервисов + ThrowError
-  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
   // 'traefik.http.routers.router-test-back-dev-http.entryPoints': 'web';
   // Поиск label - где такой ключ и есть значение
   const execLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
@@ -80,8 +95,17 @@ async function dockerCleanServiceItem(
     return;
   }
 
-  // Получить список всех TASK для этого service
+  // Проверка и удаление всех сервисов + ThrowError
+  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+  //---------
+  // EXEC
+  //---------
   for (const taskItem of taskList) {
+    // Проверка и удаление всех сервисов + ThrowError
+    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+
+    // Непосредственно EXEC
     await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
   }
 }

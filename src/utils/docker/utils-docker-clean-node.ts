@@ -1,14 +1,46 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError, logInfo } from '../utils-logger';
+import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanNodeBuilder, nameCleanNodeContainers, nameCleanNodeImages, nameLock } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
-import { DockerApiNodeLsItem, dockerApiServiceCreate } from './utils-docker-api';
+import {
+  dockerApiInspectNode,
+  DockerApiInspectNodeItem,
+  DockerApiNodeLsItem,
+  dockerApiServiceCreate,
+} from './utils-docker-api';
 
 export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   for (const nodeItem of nodeList) {
     // Потом пригодится - для получения списка labels
-    // const nodeInspectInfo = await dockerApiInspectNode(nodeItem.ID);
+    let nodeInspectInfo: DockerApiInspectNodeItem | null = null;
+    try {
+      nodeInspectInfo = await dockerApiInspectNode(nodeItem.ID);
+    } catch (err) {
+      logError('dockerCleanNodeList.nodeItem.dockerApiInspectNode.ERR', {
+        nodeItem,
+      });
+    }
+    if (nodeInspectInfo === null) {
+      logWarn('dockerCleanNodeList.nodeItem.nodeInspectInfo.NULL', {
+        nodeItem,
+      });
+      continue;
+    }
+
+    // Проверка, что NODE вообще ДОСТУПНА
+    if (nodeItem.Status !== 'Ready') {
+      logWarn('dockerCleanNodeList.nodeItem.Status.INCORRECT', {
+        nodeItem,
+      });
+      continue;
+    }
+    if (nodeItem.Availability !== 'Active') {
+      logWarn('dockerCleanNodeList.nodeItem.Availability.INCORRECT', {
+        nodeItem,
+      });
+      continue;
+    }
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT +
@@ -22,7 +54,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       .acquire(
         lockKey,
         async () => {
-          await dockerCleanNodeItem(nodeItem);
+          await dockerCleanNodeItem(nodeItem, nodeInspectInfo);
         },
         {
           maxExecutionTime,
@@ -37,28 +69,15 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   }
 }
 
-async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem) {
+async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInfo: DockerApiInspectNodeItem) {
   logInfo('dockerCleanNodeItem.INIT', {
     nodeItem,
   });
-
-  // TODO - Проверка, что NODE вообще ДОСТУПНА
-  // ...
 
   const nodeKey = `${nodeItem.ID}`;
 
   // Проверка и удаление всех сервисов
   await dockerCheckAndRemoveSupportServices(nodeKey);
-
-  // docker service create \
-  //   --detach \
-  //   --name $execServiceName \
-  //   --mode replicated \
-  //   --replicas 1 \
-  //   --constraint node.hostname==$taskNode \
-  //   --restart-condition none \
-  //   --mount type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly \
-  //   docker:25.0.5-cli-alpine3.20 sh -c "$execCommand"
 
   //---------
   //IMAGES

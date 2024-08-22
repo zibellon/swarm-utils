@@ -23,8 +23,14 @@ import {
 
 export async function dockerBackupServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
-    //TODO - работа с ошибками
-    const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
+    try {
+      inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    } catch (error) {
+      logError('dockerBackupServiceList.serviceItem.dockerApiInspectService.ERR', {
+        serviceItem,
+      });
+    }
     if (inspectServiceInfo === null) {
       logWarn('dockerBackupServiceList.serviceItem.inspectServiceInfo.NULL', {
         serviceItem,
@@ -32,13 +38,25 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       continue;
     }
 
-    //TODO - работа с ошибками
-    const taskList = await dockerApiServicePs(serviceItem.Name, [
-      {
-        key: 'desired-state',
-        value: 'Running', // Только АКТИВНЫЕ таски
-      },
-    ]);
+    let taskList: DockerApiServicePsItem[] | null = null;
+    try {
+      taskList = await dockerApiServicePs(serviceItem.Name, [
+        {
+          key: 'desired-state',
+          value: 'Running', // Только АКТИВНЫЕ таски
+        },
+      ]);
+    } catch (err) {
+      logError('dockerBackupServiceList.serviceItem.dockerApiServicePs.ERR', {
+        serviceItem,
+      });
+    }
+    if (taskList === null || taskList.length === 0) {
+      logWarn('dockerBackupServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
+        serviceItem,
+      });
+      continue;
+    }
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT * taskList.length +

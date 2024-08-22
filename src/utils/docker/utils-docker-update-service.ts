@@ -1,9 +1,15 @@
 import { getProcessEnv } from '../utils-env-config';
 import { lockResource } from '../utils-lock';
-import { logError } from '../utils-logger';
+import { logError, logWarn } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
-import { dockerApiServiceCreate, DockerApiServiceLsItem, dockerApiServiceUpdateCmd } from './utils-docker-api';
+import {
+  dockerApiInspectService,
+  DockerApiInspectServiceItem,
+  dockerApiServiceCreate,
+  DockerApiServiceLsItem,
+  dockerApiServiceUpdateCmd,
+} from './utils-docker-api';
 
 type DockerUpdateServiceParams = {
   registryAuth: boolean;
@@ -14,14 +20,20 @@ export async function dockerUpdateServiceList(
   params: DockerUpdateServiceParams
 ) {
   for (const serviceItem of serviceList) {
-    //TODO - работа с ошибками
-    // const inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
-    // if (inspectServiceInfo === null) {
-    //   logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
-    //     serviceItem,
-    //   });
-    //   continue;
-    // }
+    let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
+    try {
+      inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
+    } catch (err) {
+      logError('dockerUpdateServiceList.serviceItem.dockerApiInspectService.ERR', {
+        serviceItem,
+      });
+    }
+    if (inspectServiceInfo === null) {
+      logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
+        serviceItem,
+      });
+      continue;
+    }
 
     const maxExecutionTime =
       getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
@@ -32,7 +44,7 @@ export async function dockerUpdateServiceList(
       .acquire(
         lockKey,
         async () => {
-          await dockerUpdateServiceItem(serviceItem, params);
+          await dockerUpdateServiceItem(serviceItem, inspectServiceInfo, params);
         },
         {
           maxExecutionTime,
@@ -47,7 +59,11 @@ export async function dockerUpdateServiceList(
   }
 }
 
-async function dockerUpdateServiceItem(serviceItem: DockerApiServiceLsItem, params: DockerUpdateServiceParams) {
+async function dockerUpdateServiceItem(
+  serviceItem: DockerApiServiceLsItem,
+  inspectServiceInfo: DockerApiInspectServiceItem,
+  params: DockerUpdateServiceParams
+) {
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRemoveSupportServices(serviceItem.Name);
 
