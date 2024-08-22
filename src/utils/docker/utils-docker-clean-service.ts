@@ -102,11 +102,18 @@ async function dockerCleanServiceItem(
   // EXEC
   //---------
   for (const taskItem of taskList) {
-    // Проверка и удаление всех сервисов + ThrowError
-    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+    try {
+      // Проверка и удаление всех сервисов + ThrowError
+      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
 
-    // Непосредственно EXEC
-    await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
+      // Непосредственно EXEC
+      await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
+    } catch (err) {
+      logError('dockerCleanServiceItem.exec.ERR', err, {
+        serviceItem,
+        taskItem,
+      });
+    }
   }
 }
 

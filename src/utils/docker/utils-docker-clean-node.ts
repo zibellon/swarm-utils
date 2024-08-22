@@ -70,72 +70,85 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
 }
 
 async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInfo: DockerApiInspectNodeItem) {
-  logInfo('dockerCleanNodeItem.INIT', {
+  const logData = {
     nodeItem,
-  });
+  };
+  logInfo('dockerCleanNodeItem.INIT', logData);
 
   const nodeKey = `${nodeItem.ID}`;
 
-  // Проверка и удаление всех сервисов
+  // Проверка и удаление всех сервисов + throwError
   await dockerCheckAndRemoveSupportServices(nodeKey);
 
   //---------
   //IMAGES
   //---------
-  const cleanImagesServiceName = nameCleanNodeImages(nodeKey);
-  await dockerApiServiceCreate({
-    detach: true,
-    name: cleanImagesServiceName,
-    image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
-    mode: 'replicated',
-    replicas: 1,
-    constraint: `node.id==${nodeItem.ID}`,
-    'restart-condition': 'none',
-    mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
-    execCommand: 'docker image prune -a -f',
-  });
-  // WAIT FOR SERVICE COMPLETE
-  await dockerWaitForServiceComplete(cleanImagesServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
+  try {
+    const cleanImagesServiceName = nameCleanNodeImages(nodeKey);
+    await dockerApiServiceCreate({
+      detach: true,
+      name: cleanImagesServiceName,
+      image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
+      mode: 'replicated',
+      replicas: 1,
+      constraint: `node.id==${nodeItem.ID}`,
+      'restart-condition': 'none',
+      mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+      execShell: 'sh',
+      execCommand: 'docker image prune -a -f',
+    });
+    // WAIT FOR SERVICE COMPLETE
+    await dockerWaitForServiceComplete(cleanImagesServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
+  } catch (err) {
+    logError('dockerCleanNodeItem.image.ERR', err, logData);
+  }
 
   //---------
   //BUILDER_CACHE
   //---------
-  const cleanBuilderServiceName = nameCleanNodeBuilder(nodeKey);
-  await dockerApiServiceCreate({
-    detach: true,
-    name: cleanBuilderServiceName,
-    image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
-    mode: 'replicated',
-    replicas: 1,
-    constraint: `node.id==${nodeItem.ID}`,
-    'restart-condition': 'none',
-    mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
-    execCommand: 'docker builder prune -f',
-  });
-  // WAIT FOR SERVICE COMPLETE
-  await dockerWaitForServiceComplete(cleanBuilderServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
+  try {
+    const cleanBuilderServiceName = nameCleanNodeBuilder(nodeKey);
+    await dockerApiServiceCreate({
+      detach: true,
+      name: cleanBuilderServiceName,
+      image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
+      mode: 'replicated',
+      replicas: 1,
+      constraint: `node.id==${nodeItem.ID}`,
+      'restart-condition': 'none',
+      mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+      execShell: 'sh',
+      execCommand: 'docker builder prune -f',
+    });
+    // WAIT FOR SERVICE COMPLETE
+    await dockerWaitForServiceComplete(cleanBuilderServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
+  } catch (err) {
+    logError('dockerCleanNodeItem.builder.ERR', err, logData);
+  }
 
   //---------
   //EXIT_CONTAINERS
   //---------
-  const cleanContainerServiceName = nameCleanNodeContainers(nodeKey);
-  await dockerApiServiceCreate({
-    detach: true,
-    name: cleanContainerServiceName,
-    image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
-    mode: 'replicated',
-    replicas: 1,
-    constraint: `node.id==${nodeItem.ID}`,
-    'restart-condition': 'none',
-    mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
-    execCommand: 'docker container prune -f',
-  });
-  // WAIT FOR SERVICE COMPLETE
-  await dockerWaitForServiceComplete(
-    cleanContainerServiceName,
-    getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
-  );
+  try {
+    const cleanContainerServiceName = nameCleanNodeContainers(nodeKey);
+    await dockerApiServiceCreate({
+      detach: true,
+      name: cleanContainerServiceName,
+      image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
+      mode: 'replicated',
+      replicas: 1,
+      constraint: `node.id==${nodeItem.ID}`,
+      'restart-condition': 'none',
+      mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
+      execShell: 'sh',
+      execCommand: 'docker container prune -f',
+    });
+    // WAIT FOR SERVICE COMPLETE
+    await dockerWaitForServiceComplete(
+      cleanContainerServiceName,
+      getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
+    );
+  } catch (err) {
+    logError('dockerCleanNodeItem.container.ERR', err, logData);
+  }
 }

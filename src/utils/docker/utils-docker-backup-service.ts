@@ -14,6 +14,7 @@ import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
   dockerApiInspectTask,
+  DockerApiInspectTaskItem,
   dockerApiServiceCreate,
   DockerApiServiceLsItem,
   dockerApiServicePs,
@@ -110,12 +111,18 @@ async function dockerBackupServiceItem(
   if (volumeListLabelObj) {
     const volumeList = volumeListLabelObj[1].split(',');
     for (const taskItem of taskList) {
-      const taskInspect = await dockerApiInspectTask(taskItem.ID);
+      const logData = {
+        serviceItem,
+        taskItem,
+      };
+      let taskInspect: DockerApiInspectTaskItem | null = null;
+      try {
+        taskInspect = await dockerApiInspectTask(taskItem.ID);
+      } catch (err) {
+        logError('dockerBackupServiceItem.volumeListMap.taskInspect.ERR', err, logData);
+      }
       if (!taskInspect) {
-        logWarn('dockerBackupServiceItem.volumeListMap.taskInspect.NULL', {
-          serviceItem,
-          taskItem,
-        });
+        logWarn('dockerBackupServiceItem.volumeListMap.taskInspect.NULL', logData);
         continue;
       }
 
@@ -139,11 +146,17 @@ async function dockerBackupServiceItem(
   });
   if (execLabelObj) {
     for (const taskItem of taskList) {
-      // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
-      // Непосредственно EXEC
-      await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
+      try {
+        // Проверка и удаление всех сервисов + ThrowError
+        await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+        // Непосредственно EXEC
+        await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
+      } catch (err) {
+        logError('dockerBackupServiceItem.exec.ERR', err, {
+          serviceItem,
+          taskItem,
+        });
+      }
     }
   }
 
@@ -154,11 +167,16 @@ async function dockerBackupServiceItem(
     return el[0] === 'swarm-utils.backup.stop' && el[1] === 'true';
   });
   if (isReplicated && stopLabelObj) {
-    // Проверка и удаление всех сервисов + ThrowError
-    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
-    // Непосредственно STOP
-    await dockerBackupServiceStop(serviceItem);
+    try {
+      // Проверка и удаление всех сервисов + ThrowError
+      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+      // Непосредственно STOP
+      await dockerBackupServiceStop(serviceItem);
+    } catch (err) {
+      logError('dockerBackupServiceItem.stop.ERR', err, {
+        serviceItem,
+      });
+    }
   }
 
   //---------
@@ -166,23 +184,33 @@ async function dockerBackupServiceItem(
   //---------
   if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
-      // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
-      // Непосредственно UPLOAD
-      await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
+      try {
+        // Проверка и удаление всех сервисов + ThrowError
+        await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+        // Непосредственно UPLOAD
+        await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
+      } catch (err) {
+        logError('dockerBackupServiceItem.upload.ERR', err, {
+          serviceItem,
+        });
+      }
     }
   }
 
   //---------
-  // RESTORE (Only IF STOP)
+  // START (Only IF STOP)
   //---------
   if (isReplicated && stopLabelObj && currentDesiredReplicas !== null) {
-    // Проверка и удаление всех сервисов + ThrowError
-    await dockerCheckAndRemoveSupportServices(serviceItem.Name);
-
-    // Непосредственно START
-    await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
+    try {
+      // Проверка и удаление всех сервисов + ThrowError
+      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+      // Непосредственно START
+      await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
+    } catch (err) {
+      logError('dockerBackupServiceItem.start.ERR', err, {
+        serviceItem,
+      });
+    }
   }
 }
 
