@@ -88,7 +88,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
         lockKey,
         async () => {
           logInfo('dockerBackupServiceList.serviceItem.lock.OK', logData);
-          await dockerBackupServiceItem(serviceItem, inspectServiceInfo, taskList);
+          await dockerBackupServiceItem(serviceItem, inspectServiceInfo!, taskList!);
           logInfo('dockerBackupServiceList.serviceItem.OK', logData);
         },
         {

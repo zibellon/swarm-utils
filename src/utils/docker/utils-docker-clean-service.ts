@@ -75,7 +75,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         lockKey,
         async () => {
           logInfo('dockerCleanServiceList.serviceItem.lock.OK', logData);
-          await dockerCleanServiceItem(serviceItem, inspectServiceInfo, taskList);
+          await dockerCleanServiceItem(serviceItem, inspectServiceInfo!, taskList!);
           logInfo('dockerCleanServiceList.serviceItem.OK', logData);
         },
         {

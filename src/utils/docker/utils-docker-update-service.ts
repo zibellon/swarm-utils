@@ -61,7 +61,7 @@ export async function dockerUpdateServiceList(
         lockKey,
         async () => {
           logInfo('dockerUpdateServiceList.serviceItem.lock.OK', logData);
-          await dockerUpdateServiceItem(serviceItem, inspectServiceInfo, params);
+          await dockerUpdateServiceItem(serviceItem, inspectServiceInfo!, params);
           logInfo('dockerUpdateServiceList.serviceItem.OK', logData);
         },
         {

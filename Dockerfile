@@ -5,7 +5,7 @@ FROM --platform=linux/amd64 docker:25.0.5-cli-alpine3.20 AS build
 
 WORKDIR /app
 
-RUN apk add bash nodejs=20.15.1-r0 npm=10.8.0-r0
+RUN apk add bash nodejs=20.15.1-r0 npm=10.8.0-r0 yarn=1.22.22-r0
 
 COPY package.json ./
 COPY yarn.lock ./
@@ -28,7 +28,7 @@ FROM --platform=linux/amd64 docker:25.0.5-cli-alpine3.20 AS deploy
 
 WORKDIR /app
 
-RUN apk add bash nodejs=20.15.1-r0 npm=10.8.0-r0
+RUN apk add bash nodejs=20.15.1-r0 npm=10.8.0-r0 yarn=1.22.22-r0
 
 COPY --from=build ./app/dist ./dist
 

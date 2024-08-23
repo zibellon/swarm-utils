@@ -68,7 +68,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
         lockKey,
         async () => {
           logInfo('dockerCleanNodeList.nodeItem.lock.OK', logData);
-          await dockerCleanNodeItem(nodeItem, nodeInspectInfo);
+          await dockerCleanNodeItem(nodeItem, nodeInspectInfo!);
           logInfo('dockerCleanNodeList.nodeItem.OK', logData);
         },
         {
