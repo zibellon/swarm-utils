@@ -74,11 +74,13 @@
     1.  Ключ для доступа к S3
 23. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-24. SWARM_UTILS_REGISTRY_USER=root
+24. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
+    1.  Сколько времени живет каждый бэкап в S3
+25. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
-25. SWARM_UTILS_REGISTRY_PASSWORD=...
+26. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-26. SWARM_UTILS_REGISTRY_URL=domain.com
+27. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Список LABELS
@@ -251,8 +253,9 @@
     2.  Если указан этот параметр - работа ведется сразу по всем доступным Services (На основе токена и labels=token-list)
 11. API. Во все методы - добавить параметр waitRes=true/false
     1.  Если ждать ответ не надо - запускать без await. И сразу отдать res: процесс запущен
-12. Добавить в ENV / labels для каждого сервиса - сколько живут бэкапы
+12. labels. Добавить для каждого сервиса - сколько живут бэкапы
     1.  Сейчас стоит ХАРДКОД - 5 дней
+13. 
 
 ---
 
