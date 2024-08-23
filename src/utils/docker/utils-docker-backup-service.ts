@@ -387,7 +387,7 @@ async function dockerBackupServiceUploadVolumeList(
 
   const envList = [
     `BACKUP_CRON_EXPRESSION="0 0 5 31 2 ?"`,
-    `BACKUP_RETENTION_DAYS=5`, // TODO: перенести в ENV
+    `BACKUP_RETENTION_DAYS=${getProcessEnv().SWARM_UTILS_S3_BACKUP_RETENTION_DAYS}`,
     `BACKUP_COMPRESSION=gz`,
     `BACKUP_FILENAME=backup-${nodeId}-${serviceItem.Name}-%Y-%m-%dT%H-%M-%S.tar.gz`,
     `AWS_ENDPOINT=${getProcessEnv().SWARM_UTILS_S3_DOMAIN}`,

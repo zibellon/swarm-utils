@@ -37,6 +37,7 @@ class ProcessENV {
   public SWARM_UTILS_S3_BUCKET_NAME = 'my-bucket-name'; // Название bucket - куда заливать бэкап
   public SWARM_UTILS_S3_ACCESS_KEY = '...'; // Ключ для доступа к S3
   public SWARM_UTILS_S3_SECRET_ACCESS_KEY = '...'; // Секрет для доступа к S3
+  public SWARM_UTILS_S3_BACKUP_RETENTION_DAYS = 5; // Сколько времени живет бэкап в S3
 
   // REGISTRY
   public SWARM_UTILS_REGISTRY_USER = ''; // Имя пользователя, для доступа к регистри
@@ -137,6 +138,9 @@ export function getProcessEnv(): ProcessENV {
     }
     if (typeof process.env.SWARM_UTILS_S3_SECRET_ACCESS_KEY === 'string') {
       processENV.SWARM_UTILS_S3_SECRET_ACCESS_KEY = process.env.SWARM_UTILS_S3_SECRET_ACCESS_KEY;
+    }
+    if (typeof process.env.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS === 'string') {
+      processENV.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS = Number(process.env.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS);
     }
 
     // REGISTRY
