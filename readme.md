@@ -93,10 +93,11 @@
    1. enable=true/false
    2. exec
    3. stop=true/false
-   4. volume-list=volume1,volume2,volume3,...
+   4. volume-list-upload=volume1,volume2,volume3,...
    5. token
 3. swarm-utils.update
-   1. token
+   1. enable=true/false
+   2. token
 
 ## Для NODE
 1. swarm-utils.clean
@@ -106,7 +107,7 @@
 2. swarm-utils.backup
    1. enable=true/false
    2. exec
-   3. volume-list=volume1,volume2,volume3,...
+   3. volume-list-upload=volume1,volume2,volume3,...
    4. token
 
 # Права доступа по API - првоеряется через query "token"
@@ -204,7 +205,7 @@
 6. docker inspect SERVICE_ID --format json
 7. docker service ps SERVICE_NAME --filter 'desired-state=running' --format json
 8. Команда, для запуска внутри контейнера: docker exec CONTAINER_ID /bin/sh -c 'LABEL_STRING'
-9.  docker service ls --filter label="docker-backuper.volume-list" --format json
+9.  docker service ls --filter label="docker-backuper.volume-list-upload" --format json
 10. docker service ls --filter mode=replicated --filter label="docker-backuper.stop=true" --format json
 11. docker service scale SERVICE_NAME=123
    1. docker service scale SERVICE_NAME=0
@@ -229,12 +230,20 @@
    1. МБ будут контейнеры, из разных регистри, с разными CREDS
 6. Работа с registry - через labels
    1. Можно указать в docker-labels CREDS + URL от registry, откуда берется контейнер
-7. Конфигурировать timeout - через labels
-   1. То есть - на очистку сервиса (timeout на exec-command)
-   2. На backup, scale-down, scale-up, upload
-   3. Если label не указан - взять timeout из ENV (по умолчанию)
-8. Использовать node-labels. Чтобы настроить доступы к Nodes и настроить timeout
-   1. Сколько времени дается на exec - для очистки NODE
+7. Labels. Добавить возможность настрйоки timeout для каждого действия
+   1. Если label не указан - timeout из ENV (по умолчанию)
+   2. Список labels (SERVICE)
+      1. .backup.exec.timeout
+      2. .backup.stop.timeout
+      3. .backup.volume-list-upload.timeout
+      4. .backup.start.timeout
+      5. .clean.exec.timeout
+   3. Список labels (NODE)
+      1. .clean.image.timeout
+      2. .clean.builder.timeout
+      3. .clean.container.timeout
+8. Использовать node-labels
+   1. Сколько времени на каждую операцию - для очистки NODE
    2. Какие пользователи, имеют права доступа на очистку этой NODE
    3. Список labels
       1. clean.enable
@@ -244,7 +253,7 @@
       5. clean.builder.timeout
       6. clean.container.enable
       7. clean.container.timeout
-      8. clean.token-list
+      8. clean.token
 9. API. Добавить метод: GET /service/status (info)
    1.  Такие-же права доступа
    2.  Возвращает информацию по сервисы ?? Вместе с логами ??
@@ -255,7 +264,8 @@
     1.  Если ждать ответ не надо - запускать без await. И сразу отдать res: процесс запущен
 12. labels. Добавить для каждого сервиса - сколько живут бэкапы
     1.  Сейчас стоит ХАРДКОД - 5 дней
-13. 
+13. Переделать label (NODE / SERVICE): token -> token-list
+    1.  Идея: Чтобы передать сразу список токенов, которые имеют доступ
 
 ---
 

@@ -127,16 +127,16 @@ async function dockerBackupServiceItem(
   // NodeId=volume1,volume2,volume3,...
   const nodeVolumeListMap = new Map<string, Set<string>>();
 
-  //volume-list, collect
-  const volumeListLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-    return el[0] === 'swarm-utils.backup.volume-list' && el[1].length > 0;
+  //volume-list-upload, collect
+  const volumeListUploadLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+    return el[0] === 'swarm-utils.backup.volume-list-upload' && el[1].length > 0;
   });
   logInfo('dockerBackupServiceItem.prepareZone.volumeList.INIT', {
     ...logData,
-    volumeListLabelObj,
+    volumeListLabelObj: volumeListUploadLabelObj,
   });
-  if (volumeListLabelObj) {
-    const volumeList = volumeListLabelObj[1].split(',');
+  if (volumeListUploadLabelObj) {
+    const volumeList = volumeListUploadLabelObj[1].split(',');
     for (const taskItem of taskList) {
       const logData = {
         serviceItem,

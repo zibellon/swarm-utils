@@ -20,6 +20,10 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
       key: 'name',
       value: params.serviceName,
     },
+    {
+      key: 'label',
+      value: 'swarm-utils.update.enable=true',
+    },
   ];
   if (!isAdmin) {
     filterList.push({
