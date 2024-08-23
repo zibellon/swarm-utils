@@ -1,5 +1,5 @@
 import { getProcessEnv } from '../utils-env-config';
-import { lockResource } from '../utils-lock';
+import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import {
   nameBackupServiceExec,
@@ -64,20 +64,17 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       continue;
     }
 
-    // TODO - отдельная функция
-    const maxExecutionTime =
-      getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT * taskList.length +
-      getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT * taskList.length +
-      getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT * taskList.length +
-      getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT * taskList.length +
-      getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
-    const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+    const lockTimeoutObj = lockGetTimeoutBackupService({
+      execTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT * taskList.length,
+      stopTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT * taskList.length,
+      volumeListUploadTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT * taskList.length,
+      startTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT * taskList.length,
+    });
     const lockKey = nameLock(serviceItem.Name);
 
     const logData = {
       lockKey,
-      maxExecutionTime,
-      maxOccupationTime,
+      lockTimeoutObj,
       serviceItem,
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
       taskList,
@@ -92,8 +89,8 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
           logInfo('dockerBackupServiceList.serviceItem.OK', logData);
         },
         {
-          maxExecutionTime,
-          maxOccupationTime,
+          maxExecutionTime: lockTimeoutObj.maxExecutionTime,
+          maxOccupationTime: lockTimeoutObj.maxOccupationTime,
         }
       )
       .catch((err) => {

@@ -1,5 +1,5 @@
 import { getProcessEnv } from '../utils-env-config';
-import { lockResource } from '../utils-lock';
+import { lockGetTimeoutCleanNode, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanNodeBuilder, nameCleanNodeContainers, nameCleanNodeImages, nameLock } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
@@ -47,19 +47,16 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       continue;
     }
 
-    // TODO - вынести в отдельную функцию
-    const maxExecutionTime =
-      getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT +
-      getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT +
-      getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT +
-      getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
-    const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+    const lockTimeoutObj = lockGetTimeoutCleanNode({
+      imageTimeout: getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT,
+      builderTimeout: getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT,
+      containerTimeout: getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT,
+    });
     const lockKey = nameLock(nodeItem.ID);
 
     const logData = {
       lockKey,
-      maxExecutionTime,
-      maxOccupationTime,
+      lockTimeoutObj,
       nodeItem,
       nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
     };
@@ -72,8 +69,8 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
           logInfo('dockerCleanNodeList.nodeItem.OK', logData);
         },
         {
-          maxExecutionTime,
-          maxOccupationTime,
+          maxExecutionTime: lockTimeoutObj.maxExecutionTime,
+          maxOccupationTime: lockTimeoutObj.maxOccupationTime,
         }
       )
       .catch((err) => {

@@ -1,5 +1,5 @@
 import { getProcessEnv } from '../utils-env-config';
-import { lockResource } from '../utils-lock';
+import { lockGetTimeoutUpdateService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
@@ -41,16 +41,14 @@ export async function dockerUpdateServiceList(
       continue;
     }
 
-    // TODO - отдельная функция
-    const maxExecutionTime =
-      getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
-    const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+    const lockTimeoutObj = lockGetTimeoutUpdateService({
+      updateTimeout: getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
+    })
     const lockKey = nameLock(serviceItem.Name);
 
     const logData = {
       lockKey,
-      maxExecutionTime,
-      maxOccupationTime,
+      lockTimeoutObj,
       params,
       serviceItem,
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
@@ -65,8 +63,8 @@ export async function dockerUpdateServiceList(
           logInfo('dockerUpdateServiceList.serviceItem.OK', logData);
         },
         {
-          maxExecutionTime,
-          maxOccupationTime,
+          maxExecutionTime: lockTimeoutObj.maxExecutionTime,
+          maxOccupationTime: lockTimeoutObj.maxOccupationTime,
         }
       )
       .catch((err) => {

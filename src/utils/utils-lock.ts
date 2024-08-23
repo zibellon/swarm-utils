@@ -22,3 +22,109 @@ export const lockResource = new AsyncLock({
 // lock.acquire(key, fn, function(err, ret) {
 // 	// execution time exceeded error will be returned here if job not completed in given time
 // });
+
+export type LockGetTimeoutCleanNodeParams = {
+  imageTimeout?: number;
+  builderTimeout?: number;
+  containerTimeout?: number;
+};
+export function lockGetTimeoutCleanNode(params?: LockGetTimeoutCleanNodeParams) {
+  let imageTimeout = 0;
+  let builderTimeout = 0;
+  let containerTimeout = 0;
+
+  if (params) {
+    if (typeof params.imageTimeout === 'number') {
+      imageTimeout = params.imageTimeout;
+    }
+    if (typeof params.builderTimeout === 'number') {
+      builderTimeout = params.builderTimeout;
+    }
+    if (typeof params.containerTimeout === 'number') {
+      containerTimeout = params.containerTimeout;
+    }
+  }
+
+  const maxExecutionTime = imageTimeout + builderTimeout + containerTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+  return {
+    maxExecutionTime,
+    maxOccupationTime,
+  };
+}
+
+export type LockGetTimeoutCleanServiceParams = {
+  execTimeout?: number;
+};
+export function lockGetTimeoutCleanService(params?: LockGetTimeoutCleanServiceParams) {
+  let execTimeout = 0;
+
+  if (params) {
+    if (typeof params.execTimeout === 'number') {
+      execTimeout = params.execTimeout;
+    }
+  }
+
+  const maxExecutionTime = execTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+  return {
+    maxExecutionTime,
+    maxOccupationTime,
+  };
+}
+
+export type LockGetTimeoutBackupServiceParams = {
+  execTimeout?: number;
+  stopTimeout?: number;
+  volumeListUploadTimeout?: number;
+  startTimeout?: number;
+};
+export function lockGetTimeoutBackupService(params?: LockGetTimeoutBackupServiceParams) {
+  let execTimeout = 0;
+  let stopTimeout = 0;
+  let volumeListUploadTimeout = 0;
+  let startTimeout = 0;
+
+  if (params) {
+    if (typeof params.execTimeout === 'number') {
+      execTimeout = params.execTimeout;
+    }
+    if (typeof params.stopTimeout === 'number') {
+      stopTimeout = params.stopTimeout;
+    }
+    if (typeof params.volumeListUploadTimeout === 'number') {
+      volumeListUploadTimeout = params.volumeListUploadTimeout;
+    }
+    if (typeof params.startTimeout === 'number') {
+      startTimeout = params.startTimeout;
+    }
+  }
+
+  const maxExecutionTime =
+    execTimeout + stopTimeout + volumeListUploadTimeout + startTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+  return {
+    maxExecutionTime,
+    maxOccupationTime,
+  };
+}
+
+export type LockGetTimeoutUpdateServiceParams = {
+  updateTimeout?: number;
+};
+export function lockGetTimeoutUpdateService(params?: LockGetTimeoutUpdateServiceParams) {
+  let updateTimeout = 0;
+
+  if (params) {
+    if (typeof params.updateTimeout === 'number') {
+      updateTimeout = params.updateTimeout;
+    }
+  }
+
+  const maxExecutionTime = updateTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+  return {
+    maxExecutionTime,
+    maxOccupationTime,
+  };
+}

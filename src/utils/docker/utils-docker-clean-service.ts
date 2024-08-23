@@ -1,5 +1,5 @@
 import { getProcessEnv } from '../utils-env-config';
-import { lockResource } from '../utils-lock';
+import { lockGetTimeoutCleanService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanServiceExec, nameLock } from '../utils-names';
 import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
@@ -55,16 +55,14 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       continue;
     }
 
-    const maxExecutionTime =
-      getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT * taskList.length +
-      getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
-    const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
+    const lockTimeoutObj = lockGetTimeoutCleanService({
+      execTimeout: getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT * taskList.length,
+    });
     const lockKey = nameLock(serviceItem.Name);
 
     const logData = {
       lockKey,
-      maxExecutionTime,
-      maxOccupationTime,
+      lockTimeoutObj,
       serviceItem,
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
       taskList,
@@ -79,8 +77,8 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
           logInfo('dockerCleanServiceList.serviceItem.OK', logData);
         },
         {
-          maxExecutionTime,
-          maxOccupationTime,
+          maxExecutionTime: lockTimeoutObj.maxExecutionTime,
+          maxOccupationTime: lockTimeoutObj.maxOccupationTime,
         }
       )
       .catch((err) => {
