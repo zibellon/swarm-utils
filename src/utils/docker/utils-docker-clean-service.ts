@@ -2,7 +2,11 @@ import { getProcessEnv } from '../utils-env-config';
 import { lockGetTimeoutCleanService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanServiceExec, nameLock } from '../utils-names';
-import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } from './utils-docker';
+import {
+  dockerCheckAndRmHelpServices,
+  dockerCheckAndRmHelpServicesForService,
+  dockerWaitForServiceComplete,
+} from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -128,8 +132,6 @@ async function dockerCleanServiceItem(
     };
     try {
       logInfo('dockerCleanServiceItem.taskItem.exec.INIT', logData2);
-      // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
       // Непосредственно EXEC
       await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
       logInfo('dockerCleanServiceItem.taskItem.exec.OK', logData2);
@@ -160,6 +162,10 @@ async function dockerCleanServiceItemExecOnTask(
     return;
   }
 
+  const execServiceName = nameCleanServiceExec(serviceItem.Name);
+  // Проверка и удаление сервиса + ThrowError
+  await dockerCheckAndRmHelpServices([execServiceName]);
+
   // Получить id контейнера - в котором нужно сделать exec команду
   const containerId = taskInspectInfo.Status.ContainerStatus.ContainerID;
   const nodeId = taskInspectInfo.NodeID;
@@ -174,20 +180,19 @@ async function dockerCleanServiceItemExecOnTask(
   //---------
   //EXEC
   //---------
-  const cleanServiceExecServiceName = nameCleanServiceExec(serviceItem.Name);
   const dockerExecShell = getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL;
   const dockerExecCommand = `docker exec ${containerId} ${dockerExecShell} -c '${execCommand}'`;
   const logData2 = {
     ...logData,
     containerId,
     nodeId,
-    serviceName: cleanServiceExecServiceName,
+    serviceName: execServiceName,
     dockerExecCommand,
   };
   logInfo('dockerCleanServiceItemExecOnTask.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
     detach: true,
-    name: cleanServiceExecServiceName,
+    name: execServiceName,
     image: getProcessEnv().SWARM_UTILS_DOCKER_CLI_IMAGE_NAME,
     mode: 'replicated',
     replicas: 1,
@@ -199,9 +204,6 @@ async function dockerCleanServiceItemExecOnTask(
   });
   logInfo('dockerCleanServiceItemExecOnTask.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
-  await dockerWaitForServiceComplete(
-    cleanServiceExecServiceName,
-    getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
-  );
+  await dockerWaitForServiceComplete(execServiceName, getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT);
   logInfo('dockerCleanServiceItemExecOnTask.exec.OK', logData2);
 }

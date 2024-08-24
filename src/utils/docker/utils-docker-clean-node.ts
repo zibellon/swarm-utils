@@ -117,10 +117,8 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       execCommand: 'docker image prune -a -f',
     });
     logInfo('dockerCleanNodeItem.image.WAIT_FOR_COMPLETE', logData2);
-
     // WAIT FOR SERVICE COMPLETE
     await dockerWaitForServiceComplete(cleanImageServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
-
     logInfo('dockerCleanNodeItem.image.OK', logData2);
   } catch (err) {
     logError('dockerCleanNodeItem.image.ERR', err, logData);

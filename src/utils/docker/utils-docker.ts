@@ -183,7 +183,7 @@ export async function dockerCheckAndRmHelpServicesForService(serviceKey: string)
   await dockerCheckAndRmHelpServices(serviceNameList);
 }
 
-async function dockerCheckAndRmHelpServices(serviceNameList: string[]) {
+export async function dockerCheckAndRmHelpServices(serviceNameList: string[]) {
   logInfo('dockerCheckAndRemoveSupportServices.INIT', {
     serviceNameList,
   });
