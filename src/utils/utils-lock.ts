@@ -45,7 +45,12 @@ export function lockGetTimeoutCleanNode(params?: LockGetTimeoutCleanNodeParams) 
     }
   }
 
-  const maxExecutionTime = imageTimeout + builderTimeout + containerTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxExecutionTime =
+    imageTimeout +
+    builderTimeout +
+    containerTimeout +
+    getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT +
+    getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -65,7 +70,8 @@ export function lockGetTimeoutCleanService(params?: LockGetTimeoutCleanServicePa
     }
   }
 
-  const maxExecutionTime = execTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxExecutionTime =
+    execTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -101,7 +107,12 @@ export function lockGetTimeoutBackupService(params?: LockGetTimeoutBackupService
   }
 
   const maxExecutionTime =
-    execTimeout + stopTimeout + volumeListUploadTimeout + startTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+    execTimeout +
+    stopTimeout +
+    volumeListUploadTimeout +
+    startTimeout +
+    getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT +
+    getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -121,7 +132,8 @@ export function lockGetTimeoutUpdateService(params?: LockGetTimeoutUpdateService
     }
   }
 
-  const maxExecutionTime = updateTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
+  const maxExecutionTime =
+    updateTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,

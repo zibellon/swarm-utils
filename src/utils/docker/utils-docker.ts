@@ -20,11 +20,14 @@ export async function dockerServiceGetStatusInfo(serviceName: string) {
   const result = {
     isExist: false,
     canRemove: true,
+    isPendingTimeout: false,
   };
 
   result.isExist = await dockerServiceIsExist(serviceName);
   if (result.isExist) {
-    result.canRemove = await dockerServiceCanRemove(serviceName);
+    const canRemoveInfo = await dockerServiceCanRemove(serviceName);
+    result.canRemove = canRemoveInfo.canRemove;
+    result.isPendingTimeout = canRemoveInfo.isPendingTimeout;
   }
   logInfo('dockerServiceGetStatusInfo.RESULT', {
     serviceName,
@@ -53,6 +56,7 @@ export async function dockerServiceCanRemove(serviceName: string) {
   const taskList = await dockerApiServicePs(serviceName);
 
   let canRemove = true;
+  let isPendingTimeout = false;
   for (const taskItem of taskList) {
     const logData = {
       serviceName,
@@ -76,11 +80,12 @@ export async function dockerServiceCanRemove(serviceName: string) {
     // Сервис НЕЛЬЗЯ удалять в двух случаях
     // 1. Есть таска в статусе runnong
     // 2. Есть таска в статусе pending + createdAt > Now() - 30 sec (set in ENV)
+    // 2.1 Отдельный указатель, если произошел pendingTimeout
 
     // "DesiredState": "shutdown" - можно посмотреть и без inspect
     // inspect - нужен только для отлова: вечного pending
 
-    // Есть таска в статусе running || "DesiredState": "shutdown"
+    // Есть таска "Status.State": "running" || "DesiredState": "shutdown"
     if (
       taskInspectInfo.DesiredState.toLocaleLowerCase() !== 'shutdown' ||
       taskInspectInfo.Status.State.toLowerCase() === 'running'
@@ -97,10 +102,15 @@ export async function dockerServiceCanRemove(serviceName: string) {
       });
       if (createdAt.getTime() + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT > now.getTime()) {
         canRemove = false;
+      } else {
+        isPendingTimeout = true;
       }
     }
   }
-  return canRemove;
+  return {
+    canRemove,
+    isPendingTimeout,
+  };
 }
 
 // Метод для ожидания завершения работы сервиса
@@ -121,14 +131,13 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
     currentTime,
   });
 
-  let isComplete = false;
-
   const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
 
   // Или не существует или можно удалить
-  isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
+  let isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
+  let isPendingTimeout = serviceStatusInfo.canRemove === true && serviceStatusInfo.isPendingTimeout;
 
-  while (currentTime < timeoutTime && isComplete === false) {
+  while (currentTime < timeoutTime && (isComplete === false || isPendingTimeout === false)) {
     logInfo('dockerWaitForServiceComplete.while.PROCESS', logData);
 
     await new Promise((r) => setTimeout(r, 2000));
@@ -141,15 +150,17 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
     });
 
     isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
+    isPendingTimeout = serviceStatusInfo.canRemove === true && serviceStatusInfo.isPendingTimeout;
   }
-
   if (isComplete === true) {
     logInfo('dockerWaitForServiceComplete.COMPLETE', logData);
     return;
   }
-
+  if (isPendingTimeout === true) {
+    logWarn('dockerWaitForServiceComplete.pending.TIMEOUT_ERROR', logData);
+    throwErrorSimple('dockerWaitForServiceComplete.pending.TIMEOUT', logData);
+  }
   logWarn('dockerWaitForServiceComplete.TIMEOUT_ERROR', logData);
-
   throwErrorSimple('dockerWaitForServiceComplete.TIMEOUT', logData);
 }
 

@@ -64,27 +64,29 @@
     1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
 18. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
     1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
-19. SWARM_UTILS_LOCK_TIMEOUT=10_000
+19. SWARM_UTILS_PENDING_SERVICE_TIMEOUT=20_000
+    1.  Сколько времени на запуск сервиса
+20. SWARM_UTILS_LOCK_TIMEOUT=10_000
    1. 10 секунд - сколько времени на уствновку блокировки
-20. SWARM_UTILS_EXTRA_TIMEOUT=10_000
+21. SWARM_UTILS_EXTRA_TIMEOUT=10_000
     1.  Дополнительное время для блокировки. Задержки сети и ТД
-21. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+22. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
     1.  Доменное имя где находится облако S3
-22. SWARM_UTILS_S3_HTTPS=true
+23. SWARM_UTILS_S3_HTTPS=true
     1.  Использовать HTTPS или нет. Если нет - подключение будет идти через http://
-23. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+24. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
     1.  Название игслуе - куда заливать бэкап
-24. SWARM_UTILS_S3_ACCESS_KEY=...
+25. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-25. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+26. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-26. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
+27. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
     1.  Сколько времени живет каждый бэкап в S3
-27. SWARM_UTILS_REGISTRY_USER=root
+28. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
-28. SWARM_UTILS_REGISTRY_PASSWORD=...
+29. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-29. SWARM_UTILS_REGISTRY_URL=domain.com
+30. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Список LABELS
@@ -189,13 +191,15 @@
 1. async-lock, Timeout состоит из нескольких частей
    1. Время на установку LOCK (пакет: async-lock)
    2. Время на выполнение операции, после установки LOCK
-   3. Общее время на все: установка LOCK + выполнение операции
-2. while timeout
-   1. Для каждой конкретной операции есть фиксированный timeout
+   3. Общее время: установка LOCK + выполнение операции
+2. dockerWaitForServiceComplete - Ожидание, пока сервис закончит работу
+   1. Для каждой операции есть фиксированный timeout - указан в ENV
+   2. SWARM_UTILS_PENDING_SERVICE_TIMEOUT - Время на запуск сервиса. Указано в ENV
+   3. Ситуация: Запуск сервиса с неправильным Constraint -> вечный pending
 3. Как считается
-   1. Время операции = SUM(timeout операции * количество операций) + EXTRA_time
+   1. Время операции = SUM(timeout операции * количество операций) + EXTRA_TIMEOUT + SWARM_UTILS_PENDING_SERVICE_TIMEOUT
    2. Время суммарно = Время операции + LOCK_TIMEOUT
-   3. Количество операций: Например когда надо сделать clean-service, а у service 4 реплики = execTimeout * 4
+   3. Количество операций: Например надо сделать clean-service, а у service 4 реплики (4 task, на разных Node) = execTimeout * 4
 
 # Основные команды DockerApi
 1. docker node ls --format json
@@ -278,7 +282,10 @@
     1.  Везде где есть exec - можно указать, какой shell использовать для вызова команд
 15. Вопрос безопасности.
     1.  Отдельная overlay сеть, --attach
-16. Labels. Добавить labels для Node
+16. Labels. Добавить в exec.shell для: backup-service, clean-service
+    1.  .clean.exec.shell=
+    2.  .backup.exec.shell=
+17. Labels. Добавить labels для Node
     1.  swarm-utils.clean
         1.  enable=true/false
         2.  exec
