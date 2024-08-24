@@ -8,6 +8,7 @@ export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
   delete result.Spec.RollbackConfig;
   delete result.Spec.EndpointSpec;
   delete result.Spec.Mode;
+  delete result.Spec.Labels;
   delete result.Spec.TaskTemplate.Resources;
   delete result.Spec.TaskTemplate.RestartPolicy;
   delete result.Spec.TaskTemplate.RestartPolicy;
@@ -17,6 +18,7 @@ export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
   delete result.Spec.TaskTemplate.ContainerSpec.Privileges;
   delete result.Spec.TaskTemplate.ContainerSpec.DNSConfig;
   delete result.Spec.TaskTemplate.ContainerSpec.Env;
+  delete result.Spec.TaskTemplate.ContainerSpec.Labels;
   return result;
 }
 
@@ -27,6 +29,7 @@ export function dockerLogInspectTaskItem(item: DockerApiInspectTaskItem) {
   delete result.Spec.Networks;
   delete result.Spec.LogDriver;
   delete result.Spec.ContainerSpec.Env;
+  delete result.Spec.ContainerSpec.Labels;
   delete result.Spec.ContainerSpec.Privileges;
   delete result.Spec.ContainerSpec.Isolation;
   return result;
@@ -37,5 +40,6 @@ export function dockerLogInspectNodeItem(item: DockerApiInspectNodeItem) {
   delete result.Description;
   delete result.Status;
   delete result.ManagerStatus;
+  delete result.Spec.Labels;
   return result;
 }

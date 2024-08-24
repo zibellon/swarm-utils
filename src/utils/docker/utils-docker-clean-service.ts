@@ -2,7 +2,7 @@ import { getProcessEnv } from '../utils-env-config';
 import { lockGetTimeoutCleanService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanServiceExec, nameLock } from '../utils-names';
-import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
+import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -115,7 +115,7 @@ async function dockerCleanServiceItem(
   });
 
   // Проверка и удаление всех сервисов + ThrowError
-  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+  await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
 
   //---------
   // EXEC
@@ -129,7 +129,7 @@ async function dockerCleanServiceItem(
     try {
       logInfo('dockerCleanServiceItem.taskItem.exec.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+      await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
       // Непосредственно EXEC
       await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
       logInfo('dockerCleanServiceItem.taskItem.exec.OK', logData2);
@@ -175,9 +175,14 @@ async function dockerCleanServiceItemExecOnTask(
   //EXEC
   //---------
   const cleanServiceExecServiceName = nameCleanServiceExec(serviceItem.Name);
+  const dockerExecShell = getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL;
+  const dockerExecCommand = `docker exec ${containerId} ${dockerExecShell} -c '${execCommand}'`;
   const logData2 = {
     ...logData,
+    containerId,
+    nodeId,
     serviceName: cleanServiceExecServiceName,
+    dockerExecCommand,
   };
   logInfo('dockerCleanServiceItemExecOnTask.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
@@ -190,7 +195,7 @@ async function dockerCleanServiceItemExecOnTask(
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: 'sh',
-    execCommand: `docker exec ${containerId} /bin/sh -c '${execCommand}'`, // From label
+    execCommand: dockerExecCommand,
   });
   logInfo('dockerCleanServiceItemExecOnTask.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE

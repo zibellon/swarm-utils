@@ -9,7 +9,7 @@ import {
   nameLock,
 } from '../utils-names';
 import { authIsS3Enable } from '../utils-token';
-import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
+import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -111,7 +111,7 @@ async function dockerBackupServiceItem(
   logInfo('dockerBackupServiceItem.INIT', logData);
 
   // Проверка и удаление всех сервисов + ThrowError
-  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+  await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
 
   //---------
   //PREPARE-ZONE
@@ -188,7 +188,7 @@ async function dockerBackupServiceItem(
       try {
         logInfo('dockerBackupServiceItem.taskItem.exec.INIT', logData2);
         // Проверка и удаление всех сервисов + ThrowError
-        await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+        await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
         // Непосредственно EXEC
         await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
         logInfo('dockerBackupServiceItem.taskItem.exec.OK', logData2);
@@ -218,7 +218,7 @@ async function dockerBackupServiceItem(
     try {
       logInfo('dockerBackupServiceItem.stop.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+      await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
       // Непосредственно STOP
       await dockerBackupServiceStop(serviceItem);
       logInfo('dockerBackupServiceItem.stop.OK', logData2);
@@ -240,7 +240,7 @@ async function dockerBackupServiceItem(
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
         // Проверка и удаление всех сервисов + ThrowError
-        await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+        await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
         // Непосредственно UPLOAD
         await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
         logInfo('dockerBackupServiceItem.nodeId.upload.OK', logData2);
@@ -263,7 +263,7 @@ async function dockerBackupServiceItem(
     try {
       logInfo('dockerBackupServiceItem.start.INIT', logData2);
       // Проверка и удаление всех сервисов + ThrowError
-      await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+      await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
       // Непосредственно START
       await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
       logInfo('dockerBackupServiceItem.start.OK', logData2);
@@ -309,11 +309,14 @@ async function dockerBackupServiceExec(
   //EXEC
   //---------
   const execServiceName = nameBackupServiceExec(serviceItem.Name);
+  const dockerExecShell = getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL;
+  const dockerExecCommand = `docker exec ${containerId} ${dockerExecShell} -c '${execCommand}'`;
   const logData2 = {
     ...logData,
     containerId,
     nodeId,
     serviceName: execServiceName,
+    dockerExecCommand,
   };
   logInfo('dockerBackupServiceExec.exec.SERVICE_CREATE', logData2);
   await dockerApiServiceCreate({
@@ -326,7 +329,7 @@ async function dockerBackupServiceExec(
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: 'sh',
-    execCommand: `docker exec ${containerId} /bin/sh -c '${execCommand}'`, // From label
+    execCommand: dockerExecCommand,
   });
   logInfo('dockerBackupServiceExec.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE

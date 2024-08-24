@@ -42,45 +42,49 @@
    1. Список из токенов, которае имею админ-права
 7. SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
    1. Название docker-cli image, который будет запускаться на каждой `NODE`
-8. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT
+8. SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL=/bin/sh
+   1. Указание shell - для EXEC комманды в момент BACKUP_SERVICE. Передается в `docker exec ... SHELL -c`
+9.  SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL=/bin/sh
+    1.  Указание shell - для EXEC комманды в момент CLEAN_SERVICE. Передается в `docker exec ... SHELL -c`
+10. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT
    1. Сколько времени на EXEC команду в момент BACKUP_SERVICE
-9.  SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT
+11. SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT
    1. Сколько времени на STOP команду в момент BACKUP_SERVICE
-10. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
+12. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
     1.  Сколько времени на UPLOAD команду в момент BACKUP_SERVICE
-11. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
+13. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
     1.  Сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
-12. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
+14. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
     1.  Сколько времени на EXEC команду в момент CLEAN_SERVICE
-13. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
+15. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
     1.  Сколько времени на UPDATE_SERVICE
-14. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT
+16. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT
     1.  Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
-15. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT
+17. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT
     1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
-16. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
+18. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
     1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
-17. SWARM_UTILS_LOCK_TIMEOUT=10_000
+19. SWARM_UTILS_LOCK_TIMEOUT=10_000
    1. 10 секунд - сколько времени на уствновку блокировки
-18. SWARM_UTILS_EXTRA_TIMEOUT=10_000
+20. SWARM_UTILS_EXTRA_TIMEOUT=10_000
     1.  Дополнительное время для блокировки. Задержки сети и ТД
-19. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+21. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
     1.  Доменное имя где находится облако S3
-20. SWARM_UTILS_S3_HTTPS=true
+22. SWARM_UTILS_S3_HTTPS=true
     1.  Использовать HTTPS или нет. Если нет - подключение будет идти через http://
-21. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+23. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
     1.  Название игслуе - куда заливать бэкап
-22. SWARM_UTILS_S3_ACCESS_KEY=...
+24. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-23. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+25. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
     1.  Секрет для доступа к S3
-24. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
+26. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
     1.  Сколько времени живет каждый бэкап в S3
-25. SWARM_UTILS_REGISTRY_USER=root
+27. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
-26. SWARM_UTILS_REGISTRY_PASSWORD=...
+28. SWARM_UTILS_REGISTRY_PASSWORD=...
     1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-27. SWARM_UTILS_REGISTRY_URL=domain.com
+29. SWARM_UTILS_REGISTRY_URL=domain.com
     1.  url регистри. Обязательно используется HTTPS
 
 # Список LABELS
@@ -100,15 +104,7 @@
    2. token
 
 ## Для NODE
-1. swarm-utils.clean
-   1. enable=true/false
-   2. exec
-   3. token
-2. swarm-utils.backup
-   1. enable=true/false
-   2. exec
-   3. volume-list-upload=volume1,volume2,volume3,...
-   4. token
+На данный момент - НЕТ
 
 # Права доступа по API - првоеряется через query "token"
 1. Админы. Cписок токенов указан через ENV `SWARM_UTILS_ADMIN_TOKEN_LIST`
@@ -266,7 +262,7 @@
       6. clean.container.enable
       7. clean.container.timeout
       8. clean.token
-9. API. Добавить метод: GET /service/status (info)
+9.  API. Добавить метод: GET /service/status (info)
    1.  Такие-же права доступа
    2.  Возвращает информацию по сервисы ?? Вместе с логами ??
 10. API. В методы: clean/backup - добавить параметр all=true
@@ -282,7 +278,13 @@
     1.  Везде где есть exec - можно указать, какой shell использовать для вызова команд
 15. Вопрос безопасности.
     1.  Отдельная overlay сеть, --attach
-
----
-
-Работа ведётся со списком сервисов - которые были получены вначале! Исполбзовать Map
+16. Labels. Добавить labels для Node
+    1.  swarm-utils.clean
+        1.  enable=true/false
+        2.  exec
+        3.  token
+    2.  swarm-utils.backup
+        1.  enable=true/false
+        2.  exec
+        3.  volume-list-upload=volume1,volume2,volume3,...
+        4.  token

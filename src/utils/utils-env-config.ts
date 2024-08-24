@@ -9,6 +9,10 @@ class ProcessENV {
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = 'docker:25.0.5-cli-alpine3.20'; // Название docker-cli image, который будет запускаться на каждой NODE
 
+  // EXEC_SHELL
+  public SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL = '/bin/sh'; // Указание shell - для EXEC комманды в момент BACKUP_SERVICE
+  public SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL = '/bin/sh'; // Указание shell - для EXEC комманды в момент CLEAN_SERVICE
+
   // BACKUP_SERVICE_TIMEOUT
   public SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = 60_000; // 60 секунд - сколько времени на EXEC команду в момент BACKUP_SERVICE
   public SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT = 30_000; // 30 секунд - сколько времени на STOP команду в момент BACKUP_SERVICE
@@ -72,6 +76,14 @@ export function getProcessEnv(): ProcessENV {
     }
     if (typeof process.env.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME === 'string') {
       processENV.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = process.env.SWARM_UTILS_DOCKER_CLI_IMAGE_NAME;
+    }
+
+    //EXEC_SHELL
+    if (typeof process.env.SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL === 'string') {
+      processENV.SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL = process.env.SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL;
+    }
+    if (typeof process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL === 'string') {
+      processENV.SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL = process.env.SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL;
     }
 
     // Timeouts

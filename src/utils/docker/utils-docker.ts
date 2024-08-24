@@ -1,7 +1,7 @@
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { logInfo, logWarn } from '../utils-logger';
-import { nameGetAllServiceNamesForService } from '../utils-names';
+import { nameGetAllServiceNamesForNode, nameGetAllServiceNamesForService } from '../utils-names';
 import {
   dockerApiInspectTask,
   dockerApiServiceLs,
@@ -54,24 +54,22 @@ export async function dockerServiceCanRemove(serviceName: string) {
 
   let canRemove = true;
   for (const taskItem of taskList) {
-    logInfo('dockerServiceCanRemove.taskItem.INIT', {
+    const logData = {
       serviceName,
       taskItem,
-    });
+    };
+    logInfo('dockerServiceCanRemove.taskItem.INIT', logData);
     if (canRemove === false) {
-      logInfo('dockerServiceCanRemove.taskItem.canRemove.FALSE', {
-        serviceName,
-        taskItem,
-      });
+      logInfo('dockerServiceCanRemove.taskItem.canRemove.FALSE', logData);
       continue;
     }
     const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
     if (taskInspectInfo === null) {
+      logInfo('dockerServiceCanRemove.taskItem.inspect.NULL', logData);
       continue;
     }
-    logInfo('dockerServiceCanRemove.taskInspectInfo.INIT', {
-      serviceName,
-      taskItem,
+    logInfo('dockerServiceCanRemove.taskItem.inspect.OK', {
+      ...logData,
       taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
     });
 
@@ -92,6 +90,11 @@ export async function dockerServiceCanRemove(serviceName: string) {
       // Есть таска в статусе pending AND createdAt + 30 sec > Now(). (set in ENV)
       const createdAt = new Date(taskInspectInfo.CreatedAt);
       const now = new Date();
+      logInfo('dockerServiceCanRemove.taskItempending.INIT', {
+        ...logData,
+        createdAt,
+        now,
+      });
       if (createdAt.getTime() + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT > now.getTime()) {
         canRemove = false;
       }
@@ -150,35 +153,45 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
   throwErrorSimple('dockerWaitForServiceComplete.TIMEOUT', logData);
 }
 
-// Добавить метод для проверки списка сервисов, удаления и указания - можно идти дальше или нет ?
-export async function dockerCheckAndRemoveSupportServices(serviceName: string) {
-  logInfo('dockerCheckAndRemoveSupportServices.INIT', {
-    serviceName,
+//---------
+// Проверка списка сервисов, и результат - можно идти дальше или нет
+//---------
+export async function dockerCheckAndRmHelpServicesForNode(nodeKey: string) {
+  logInfo('dockerCheckAndRmHelpServicesForNode.INIT', {
+    nodeKey,
   });
+  const serviceNameList = nameGetAllServiceNamesForNode(nodeKey);
+  await dockerCheckAndRmHelpServices(serviceNameList);
+}
 
-  const allServiceNameList = nameGetAllServiceNamesForService(serviceName);
+export async function dockerCheckAndRmHelpServicesForService(serviceKey: string) {
+  logInfo('dockerCheckAndRmHelpServicesForService.INIT', {
+    serviceKey,
+  });
+  const serviceNameList = nameGetAllServiceNamesForService(serviceKey);
+  await dockerCheckAndRmHelpServices(serviceNameList);
+}
 
-  logInfo('dockerCheckAndRemoveSupportServices.ALL_SERVICE_NAME_LIST', {
-    serviceName,
-    allServiceNameList,
+async function dockerCheckAndRmHelpServices(serviceNameList: string[]) {
+  logInfo('dockerCheckAndRemoveSupportServices.INIT', {
+    serviceNameList,
   });
 
   let canContinue = true;
   const removeServiceNameList: string[] = [];
-  for (const allServiceName of allServiceNameList) {
-    const serviceStatusInfo = await dockerServiceGetStatusInfo(allServiceName);
+  for (const serviceName of serviceNameList) {
+    const serviceStatusInfo = await dockerServiceGetStatusInfo(serviceName);
 
     logInfo('dockerCheckAndRemoveSupportServices.serviceName.PROCESS', {
+      serviceNameList,
       serviceName,
       serviceStatusInfo,
-      allServiceName,
-      allServiceNameList,
     });
 
     if (serviceStatusInfo.isExist) {
       if (serviceStatusInfo.canRemove) {
         // Сервис существует и его МОЖНО удалить
-        removeServiceNameList.push(allServiceName);
+        removeServiceNameList.push(serviceName);
       } else {
         canContinue = false;
       }
@@ -186,10 +199,10 @@ export async function dockerCheckAndRemoveSupportServices(serviceName: string) {
   }
   if (canContinue === false) {
     logWarn('dockerCheckAndRemoveSupportServices.CANNOT_CONTINUE', {
-      serviceName,
+      serviceNameList,
     });
     throwErrorSimple('dockerCheckAndRemoveSupportServices.CANNOT_CONTINUE_1', {
-      serviceName,
+      serviceNameList,
     });
   }
   if (removeServiceNameList.length > 0) {
@@ -197,6 +210,9 @@ export async function dockerCheckAndRemoveSupportServices(serviceName: string) {
       await dockerApiServiceRemove(serviceName);
     }
   }
+  logInfo('dockerCheckAndRemoveSupportServices.OK', {
+    serviceNameList,
+  });
 }
 
 export function dockerRegistryIsCanAuth() {

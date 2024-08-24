@@ -2,7 +2,7 @@ import { getProcessEnv } from '../utils-env-config';
 import { lockGetTimeoutCleanNode, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanNodeBuilder, nameCleanNodeContainers, nameCleanNodeImages, nameLock } from '../utils-names';
-import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
+import { dockerCheckAndRmHelpServicesForNode, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectNode,
   DockerApiInspectNodeItem,
@@ -89,7 +89,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
   const nodeKey = `${nodeItem.ID}`;
 
   // Проверка и удаление всех сервисов + throwError
-  await dockerCheckAndRemoveSupportServices(nodeKey);
+  await dockerCheckAndRmHelpServicesForNode(nodeKey);
 
   logInfo('dockerCleanNodeItem.PROCESS', logData);
 

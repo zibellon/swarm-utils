@@ -2,7 +2,7 @@ import { getProcessEnv } from '../utils-env-config';
 import { lockGetTimeoutUpdateService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
-import { dockerCheckAndRemoveSupportServices, dockerWaitForServiceComplete } from './utils-docker';
+import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -42,8 +42,8 @@ export async function dockerUpdateServiceList(
     }
 
     const lockTimeoutObj = lockGetTimeoutUpdateService({
-      updateTimeout: getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
-    })
+      updateTimeout: getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT,
+    });
     const lockKey = nameLock(serviceItem.Name);
 
     const logData = {
@@ -86,7 +86,7 @@ async function dockerUpdateServiceItem(
   logInfo('dockerUpdateServiceItem.INIT', logData);
 
   // Проверка и удаление всех сервисов + ThrowError
-  await dockerCheckAndRemoveSupportServices(serviceItem.Name);
+  await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
 
   // Генерация команды для обновления сервиса
   const execCommand = dockerApiServiceUpdateCmd(serviceItem.Name, {
