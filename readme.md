@@ -201,6 +201,11 @@
    2. Время суммарно = Время операции + LOCK_TIMEOUT
    3. Количество операций: Например надо сделать clean-service, а у service 4 реплики (4 task, на разных Node) = execTimeout * 4
 
+# swarm-utils.backup.stop
+1. Остановка сервиса в момент BACKUP
+2. Остановка === docker service scale SERVICE_NAME=0
+3. Работает только на сервисы, которые запущены в mode=Replicated 
+
 # Основные команды DockerApi
 1. docker node ls --format json
 2. docker volume ls -f driver=local --format json
