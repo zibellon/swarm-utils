@@ -83,7 +83,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
       taskList,
     };
-
+    logInfo('dockerBackupServiceList.serviceItem.lock.INIT', logData);
     await lockResource
       .acquire(
         lockKey,

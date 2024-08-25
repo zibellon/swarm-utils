@@ -53,7 +53,7 @@ export async function dockerUpdateServiceList(
       serviceItem,
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
     };
-
+    logInfo('dockerUpdateServiceList.serviceItem.lock.INIT', logData);
     await lockResource
       .acquire(
         lockKey,

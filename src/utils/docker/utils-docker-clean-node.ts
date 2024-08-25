@@ -60,6 +60,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       nodeItem,
       nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
     };
+    logInfo('dockerCleanNodeList.nodeItem.lock.INIT', logData);
     await lockResource
       .acquire(
         lockKey,

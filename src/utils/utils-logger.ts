@@ -34,9 +34,9 @@ function printLog(level: string, message: string, extrasArr: any[]) {
   //Формат лога (msg, [error, obj]) или (msg, [obj])
   //info['0'] - error/obj, info['1'] - obj
   for (const el of extrasArr) {
-    if (!isEmptyObj(el) && el instanceof Error) {
+    if (el instanceof Error) {
       //Нашли инстанс ошибки
-      if (el.message.length > 0) {
+      if (typeof el.message === 'string' && el.message.length > 0) {
         //Если есть сообщение
         newInfo.message = `${newInfo.message.replace(el.message, '')}`.trim();
         newInfo['errorMessage'] = el.message;
