@@ -326,11 +326,8 @@ export function dockerApiInspectServiceCmd(serviceId: string) {
 export async function dockerApiInspectService(serviceId: string) {
   const cmd = dockerApiInspectServiceCmd(serviceId);
   const result = await bashExec(cmd);
-  const mappedResultList = result.stdout
-    .split('\n')
-    .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerApiInspectServiceItem);
-  return mappedResultList.length > 0 ? mappedResultList[0] : null;
+  const resultList = JSON.parse(result.stdout) as DockerApiInspectServiceItem[];
+  return resultList.length > 0 ? resultList[0] : null;
 }
 
 //---------
@@ -378,11 +375,8 @@ export function dockerApiInspectTaskCmd(taskId: string) {
 export async function dockerApiInspectTask(taskId: string) {
   const cmd = dockerApiInspectTaskCmd(taskId);
   const result = await bashExec(cmd);
-  const mappedResultList = result.stdout
-    .split('\n')
-    .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerApiInspectTaskItem);
-  return mappedResultList.length > 0 ? mappedResultList[0] : null;
+  const resultList = JSON.parse(result.stdout) as DockerApiInspectTaskItem[];
+  return resultList.length > 0 ? resultList[0] : null;
 }
 
 //---------
@@ -438,9 +432,6 @@ export function dockerApiInspectNodeCmd(nodeId: string) {
 export async function dockerApiInspectNode(nodeId: string) {
   const cmd = dockerApiInspectTaskCmd(nodeId);
   const result = await bashExec(cmd);
-  const mappedResultList = result.stdout
-    .split('\n')
-    .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el) as DockerApiInspectNodeItem);
-  return mappedResultList.length > 0 ? mappedResultList[0] : null;
+  const resultList = JSON.parse(result.stdout) as DockerApiInspectNodeItem[];
+  return resultList.length > 0 ? resultList[0] : null;
 }
