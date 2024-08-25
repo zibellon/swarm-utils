@@ -46,30 +46,30 @@
    1. Указание shell - для EXEC комманды в момент BACKUP_SERVICE. Передается в `docker exec ... SHELL -c`
 9.  SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL=/bin/sh
     1.  Указание shell - для EXEC комманды в момент CLEAN_SERVICE. Передается в `docker exec ... SHELL -c`
-10. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT
-   1. Сколько времени на EXEC команду в момент BACKUP_SERVICE
-11. SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT
-   1. Сколько времени на STOP команду в момент BACKUP_SERVICE
-12. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT
-    1.  Сколько времени на UPLOAD команду в момент BACKUP_SERVICE
-13. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT
-    1.  Сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
-14. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT
-    1.  Сколько времени на EXEC команду в момент CLEAN_SERVICE
-15. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT
-    1.  Сколько времени на UPDATE_SERVICE
-16. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT
-    1.  Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
-17. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT
-    1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
-18. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
-    1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
-19. SWARM_UTILS_PENDING_SERVICE_TIMEOUT=20_000
-    1.  Сколько времени на запуск сервиса
-20. SWARM_UTILS_LOCK_TIMEOUT=10_000
-   1. 10 секунд - сколько времени на уствновку блокировки
-21. SWARM_UTILS_EXTRA_TIMEOUT=10_000
-    1.  Дополнительное время для блокировки. Задержки сети и ТД
+10. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT=600000
+   1. Сколько времени на EXEC команду в момент BACKUP_SERVICE. Значение в MS
+11. SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT=60000
+   1. Сколько времени на STOP команду в момент BACKUP_SERVICE. Значение в MS
+12. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT=600000
+    1.  Сколько времени на UPLOAD команду в момент BACKUP_SERVICE. Значение в MS
+13. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT=600000
+    1.  Сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP. Значение в MS
+14. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT=60000
+    1.  Сколько времени на EXEC команду в момент CLEAN_SERVICE. Значение в MS
+15. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT=300000
+    1.  Сколько времени на UPDATE_SERVICE. Значение в MS
+16. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT=120000
+    1.  Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE. Значение в MS
+17. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT=120000
+    1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE. Значение в MS
+18. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT=120000
+    1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE. Значение в MS
+19. SWARM_UTILS_PENDING_SERVICE_TIMEOUT=20000
+    1.  Сколько времени на запуск сервиса. Значение в MS
+20. SWARM_UTILS_LOCK_TIMEOUT=10000
+   1. 10 секунд - сколько времени на уствновку блокировки. Значение в MS
+21. SWARM_UTILS_EXTRA_TIMEOUT=10000
+    1.  Дополнительное время для блокировки. Задержки сети и ТД. Значение в MS
 22. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
     1.  Доменное имя где находится облако S3
 23. SWARM_UTILS_S3_HTTPS=true
