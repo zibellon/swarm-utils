@@ -52,6 +52,11 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         serviceItem,
       });
     }
+
+    logInfo('dockerCleanServiceList.taskList.RES', {
+      taskList,
+    });
+
     if (taskList === null || taskList.length === 0) {
       logWarn('dockerCleanServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
         serviceItem,
@@ -71,6 +76,8 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
       taskList,
     };
+
+    logInfo('dockerCleanServiceList.serviceItem.lock.INIT', logData);
 
     await lockResource
       .acquire(
