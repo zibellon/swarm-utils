@@ -1,7 +1,7 @@
 import { DockerApiInspectNodeItem, DockerApiInspectServiceItem, DockerApiInspectTaskItem } from './utils-docker-api';
 
 export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
-  const result = { ...item } as any;
+  const result = JSON.parse(JSON.stringify(item));
   delete result.Endpoint;
   delete result.PreviousSpec;
   delete result.Spec.UpdateConfig;
@@ -23,7 +23,7 @@ export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
 }
 
 export function dockerLogInspectTaskItem(item: DockerApiInspectTaskItem) {
-  const result = { ...item } as any;
+  const result = JSON.parse(JSON.stringify(item));
   delete result.NetworksAttachments;
   delete result.Spec.Resources;
   delete result.Spec.Networks;
@@ -36,7 +36,7 @@ export function dockerLogInspectTaskItem(item: DockerApiInspectTaskItem) {
 }
 
 export function dockerLogInspectNodeItem(item: DockerApiInspectNodeItem) {
-  const result = { ...item } as any;
+  const result = JSON.parse(JSON.stringify(item));
   delete result.Description;
   delete result.Status;
   delete result.ManagerStatus;
