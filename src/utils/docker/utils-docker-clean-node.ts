@@ -22,7 +22,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
     try {
       nodeInspectInfo = await dockerApiInspectNode(nodeItem.ID);
     } catch (err) {
-      logError('dockerCleanNodeList.nodeItem.dockerApiInspectNode.ERR', {
+      logError('dockerCleanNodeList.nodeItem.dockerApiInspectNode.ERR', err, {
         nodeItem,
       });
     }

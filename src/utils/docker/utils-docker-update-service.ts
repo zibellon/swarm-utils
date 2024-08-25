@@ -30,7 +30,7 @@ export async function dockerUpdateServiceList(
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
     } catch (err) {
-      logError('dockerUpdateServiceList.serviceItem.dockerApiInspectService.ERR', {
+      logError('dockerUpdateServiceList.serviceItem.dockerApiInspectService.ERR', err, {
         serviceItem,
       });
     }

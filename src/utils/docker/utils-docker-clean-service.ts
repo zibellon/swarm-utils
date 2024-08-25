@@ -28,7 +28,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
     } catch (err) {
-      logError('dockerCleanServiceList.serviceItem.dockerApiInspectService.ERR', {
+      logError('dockerCleanServiceList.serviceItem.dockerApiInspectService.ERR', err, {
         serviceItem,
       });
     }
@@ -48,7 +48,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         },
       ]);
     } catch (err) {
-      logError('dockerCleanServiceList.serviceItem.dockerApiServicePs.ERR', {
+      logError('dockerCleanServiceList.serviceItem.dockerApiServicePs.ERR', err, {
         serviceItem,
       });
     }

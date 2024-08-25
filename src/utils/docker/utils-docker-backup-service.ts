@@ -36,8 +36,8 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
       inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
-    } catch (error) {
-      logError('dockerBackupServiceList.serviceItem.dockerApiInspectService.ERR', {
+    } catch (err) {
+      logError('dockerBackupServiceList.serviceItem.dockerApiInspectService.ERR', err, {
         serviceItem,
       });
     }
@@ -57,7 +57,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
         },
       ]);
     } catch (err) {
-      logError('dockerBackupServiceList.serviceItem.dockerApiServicePs.ERR', {
+      logError('dockerBackupServiceList.serviceItem.dockerApiServicePs.ERR', err, {
         serviceItem,
       });
     }
