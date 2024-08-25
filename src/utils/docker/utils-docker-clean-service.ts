@@ -53,6 +53,9 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       });
     }
 
+    logInfo('dockerCleanServiceList.inspectServiceInfo.RES', {
+      inspectServiceInfo,
+    });
     logInfo('dockerCleanServiceList.taskList.RES', {
       taskList,
     });
