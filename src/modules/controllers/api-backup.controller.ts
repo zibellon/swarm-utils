@@ -28,7 +28,7 @@ router.post('/api/backup/service', async (req, res, next) => {
     });
   } catch (err) {
     logError('request.backup.API_ERROR', err, {
-      query: req.query,
+      body: req.body,
     });
 
     res.status(400).json({

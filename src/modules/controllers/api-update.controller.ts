@@ -32,7 +32,7 @@ router.post('/api/update/service', async (req, res, next) => {
     });
   } catch (err) {
     logError('request.update.API_ERROR', err, {
-      query: req.query,
+      body: req.body,
     });
 
     res.status(400).json({

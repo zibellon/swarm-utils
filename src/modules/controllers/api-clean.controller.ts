@@ -6,7 +6,7 @@ const router = Router();
 
 router.post('/api/clean/service', async (req, res, next) => {
   const tokenBody = req.body.token;
-  const serviceNameBody = req.query.serviceName;
+  const serviceNameBody = req.body.serviceName;
 
   if (typeof tokenBody !== 'string' || tokenBody.length === 0) {
     res.status(400).json({
@@ -28,7 +28,7 @@ router.post('/api/clean/service', async (req, res, next) => {
     });
   } catch (err) {
     logError('request.clean.API_ERROR', err, {
-      query: req.query,
+      body: req.body,
     });
 
     res.status(400).json({
