@@ -118,6 +118,10 @@ async function dockerCleanServiceItem(
     execLabelObj,
   });
 
+  const execShellLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+    return el[0] === 'swarm-utils.clean.exec-shell' && el[1].length > 0;
+  });
+
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
 
@@ -133,7 +137,12 @@ async function dockerCleanServiceItem(
     try {
       logInfo('dockerCleanServiceItem.taskItem.exec.INIT', logData2);
       // Непосредственно EXEC
-      await dockerCleanServiceItemExecOnTask(serviceItem, taskItem, execLabelObj[1]);
+      await dockerCleanServiceItemExecOnTask({
+        serviceItem,
+        taskItem,
+        execCommand: execLabelObj[1],
+        execShell: execShellLabelObj ? execShellLabelObj[1] : getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL,
+      });
       logInfo('dockerCleanServiceItem.taskItem.exec.OK', logData2);
     } catch (err) {
       logError('dockerCleanServiceItem.taskItem.exec.ERR', err, logData2);
@@ -141,28 +150,25 @@ async function dockerCleanServiceItem(
   }
 }
 
-async function dockerCleanServiceItemExecOnTask(
-  serviceItem: DockerApiServiceLsItem,
-  taskItem: DockerApiServicePsItem,
-  execCommand: string
-) {
+type DockerCleanServiceItemExecOnTaskParams = {
+  serviceItem: DockerApiServiceLsItem;
+  taskItem: DockerApiServicePsItem;
+  execCommand: string;
+  execShell: string;
+};
+async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemExecOnTaskParams) {
   const logData = {
-    serviceItem,
-    taskItem,
-    execCommand,
+    ...params,
   };
   logInfo('dockerCleanServiceItemExecOnTask.INIT', logData);
 
-  const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
+  const taskInspectInfo = await dockerApiInspectTask(params.taskItem.ID);
   if (!taskInspectInfo) {
-    logWarn('dockerCleanServiceItemExecOnTask.taskInspect.NULL', {
-      serviceItem,
-      taskItem,
-    });
+    logWarn('dockerCleanServiceItemExecOnTask.taskInspect.NULL', logData);
     return;
   }
 
-  const execServiceName = nameCleanServiceExec(serviceItem.Name);
+  const execServiceName = nameCleanServiceExec(params.serviceItem.Name);
   // Проверка и удаление сервиса + ThrowError
   await dockerCheckAndRmHelpServices([execServiceName]);
 
@@ -180,8 +186,7 @@ async function dockerCleanServiceItemExecOnTask(
   //---------
   //EXEC
   //---------
-  const dockerExecShell = getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL;
-  const dockerExecCommand = `docker exec ${containerId} ${dockerExecShell} -c '${execCommand}'`;
+  const dockerExecCommand = `docker exec ${containerId} ${params.execShell} -c '${params.execCommand}'`;
   const logData2 = {
     ...logData,
     containerId,

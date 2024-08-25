@@ -307,6 +307,12 @@ export type DockerApiInspectServiceItem = {
       };
     };
   };
+  Mode: {
+    Global?: {};
+    Replicated?: {
+      Replicas: number;
+    };
+  };
   UpdateStatus: {
     State: string; // 'completed';
     StartedAt: string; // '2024-08-14T10:59:07.243899261Z';

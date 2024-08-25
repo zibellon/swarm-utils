@@ -178,9 +178,13 @@ async function dockerBackupServiceItem(
   const execLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.exec' && el[1].length > 0;
   });
+  const execShellLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+    return el[0] === 'swarm-utils.backup.exec-shell' && el[1].length > 0;
+  });
   logInfo('dockerBackupServiceItem.exec.execLabelObj.INIT', {
     ...logData,
     execLabelObj,
+    execShellLabelObj,
   });
   if (execLabelObj) {
     for (const taskItem of taskList) {
@@ -192,7 +196,12 @@ async function dockerBackupServiceItem(
       try {
         logInfo('dockerBackupServiceItem.taskItem.exec.INIT', logData2);
         // Непосредственно EXEC
-        await dockerBackupServiceExec(serviceItem, taskItem, execLabelObj[1]);
+        await dockerBackupServiceExec({
+          serviceItem,
+          taskItem,
+          execCommand: execLabelObj[1],
+          execShell: execShellLabelObj ? execShellLabelObj[1] : getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL,
+        });
         logInfo('dockerBackupServiceItem.taskItem.exec.OK', logData2);
       } catch (err) {
         logError('dockerBackupServiceItem.taskItem.exec.ERR', err, logData2);
@@ -269,28 +278,25 @@ async function dockerBackupServiceItem(
   }
 }
 
-async function dockerBackupServiceExec(
-  serviceItem: DockerApiServiceLsItem,
-  taskItem: DockerApiServicePsItem,
-  execCommand: string
-) {
+type DockerBackupServiceExecParams = {
+  serviceItem: DockerApiServiceLsItem;
+  taskItem: DockerApiServicePsItem;
+  execCommand: string;
+  execShell: string;
+};
+async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
   const logData = {
-    serviceItem,
-    taskItem,
-    execCommand,
+    ...params,
   };
   logInfo('dockerBackupServiceExec.INIT', logData);
 
-  const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
+  const taskInspectInfo = await dockerApiInspectTask(params.taskItem.ID);
   if (!taskInspectInfo) {
-    logWarn('dockerbackupServiceExec.taskInspect.NULL', {
-      serviceItem,
-      taskItem,
-    });
+    logWarn('dockerbackupServiceExec.taskInspect.NULL', logData);
     return;
   }
 
-  const execServiceName = nameBackupServiceExec(serviceItem.Name);
+  const execServiceName = nameBackupServiceExec(params.serviceItem.Name);
   // Проверка и удаление сервиса + ThrowError
   await dockerCheckAndRmHelpServices([execServiceName]);
 
@@ -308,8 +314,7 @@ async function dockerBackupServiceExec(
   //---------
   //EXEC
   //---------
-  const dockerExecShell = getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL;
-  const dockerExecCommand = `docker exec ${containerId} ${dockerExecShell} -c '${execCommand}'`;
+  const dockerExecCommand = `docker exec ${containerId} ${params.execShell} -c '${params.execCommand}'`;
   const logData2 = {
     ...logData,
     containerId,

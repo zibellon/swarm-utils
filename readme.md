@@ -94,13 +94,15 @@
 1. swarm-utils.clean
    1. enable=true/false
    2. exec
-   3. token
+   3. exec-shell='/bin/bash'
+   4. token
 2. swarm-utils.backup
    1. enable=true/false
    2. exec
-   3. stop=true/false
-   4. volume-list-upload=volume1,volume2,volume3,...
-   5. token
+   3. exec-shell='/bin/sh'
+   4. stop=true/false
+   5. volume-list-upload=volume1,volume2,volume3,...
+   6. token
 3. swarm-utils.update
    1. enable=true/false
    2. token
@@ -287,10 +289,7 @@
     1.  Везде где есть exec - можно указать, какой shell использовать для вызова команд
 15. Вопрос безопасности.
     1.  Отдельная overlay сеть, --attach
-16. Labels. Добавить в exec.shell для: backup-service, clean-service
-    1.  .clean.exec.shell=
-    2.  .backup.exec.shell=
-17. Labels. Добавить labels для Node
+16. Labels. Добавить labels для Node
     1.  swarm-utils.clean
         1.  enable=true/false
         2.  exec
