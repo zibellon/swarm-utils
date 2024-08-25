@@ -137,7 +137,7 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
   let isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
   let isPendingTimeout = serviceStatusInfo.canRemove === true && serviceStatusInfo.isPendingTimeout;
 
-  while (currentTime < timeoutTime && (isComplete === false || isPendingTimeout === false)) {
+  while (currentTime < timeoutTime && isComplete === false && isPendingTimeout === false) {
     logInfo('dockerWaitForServiceComplete.while.PROCESS', logData);
 
     await new Promise((r) => setTimeout(r, 2000));
@@ -149,6 +149,7 @@ export async function dockerWaitForServiceComplete(serviceName: string, timeout:
       serviceStatusInfo,
     });
 
+    currentTime = new Date().getTime();
     isComplete = serviceStatusInfo.isExist === false || serviceStatusInfo.canRemove === true;
     isPendingTimeout = serviceStatusInfo.canRemove === true && serviceStatusInfo.isPendingTimeout;
   }
