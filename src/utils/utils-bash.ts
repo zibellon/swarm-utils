@@ -38,14 +38,14 @@ export async function bashExec(inputCommand: string) {
       status: result.status,
       signal: result.signal,
       error: result.error,
-    }
+    };
 
     logInfo('bashExec.RESULT', {
       inputCommand,
       result: resultLog,
     });
 
-    if ((typeof result.signal === 'number' && result.signal !== 0) || result.stderr) {
+    if (typeof result.signal === 'number' && result.signal !== 0) {
       throwErrorSimple('bashExec.PRE_ERR', {
         inputCommand,
         result: resultLog,
