@@ -8,7 +8,7 @@ import {
   nameBackupServiceTarUpload,
   nameLock,
 } from '../utils-names';
-import { authIsS3Enable } from '../utils-token';
+import { authIsS3Enable } from '../utils-auth';
 import {
   dockerCheckAndRmHelpServices,
   dockerCheckAndRmHelpServicesForService,

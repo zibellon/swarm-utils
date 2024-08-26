@@ -1,15 +1,14 @@
 import { dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
 import { dockerCleanServiceList } from 'src/utils/docker/utils-docker-clean-service';
+import { authIsTokenAdmin } from 'src/utils/utils-auth';
 import { logWarn } from 'src/utils/utils-logger';
-import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type CleanServiceExecParams = {
   token: string;
   serviceName: string;
 };
-
 export async function cleanServiceExec(params: CleanServiceExecParams) {
-  const isAdmin = tokenIsAdmin(params.token);
+  const isAdmin = authIsTokenAdmin(params.token);
 
   const filterList: DockerApiServiceLsFilter[] = [
     {
@@ -35,6 +34,5 @@ export async function cleanServiceExec(params: CleanServiceExecParams) {
     });
     return;
   }
-
-  await dockerCleanServiceList(serviceList);
+  await dockerCleanServiceList([serviceList[0]]);
 }

@@ -6,6 +6,7 @@ import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } 
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
+  dockerApiLogin,
   dockerApiServiceCreate,
   DockerApiServiceLsItem,
   dockerApiServiceUpdateCmd,
@@ -13,9 +14,8 @@ import {
 import { dockerLogInspectServiceItem } from './utils-docker-logs';
 
 type DockerUpdateServiceParams = {
-  registryAuth: boolean;
   force: boolean;
-  image?: string;
+  image: string;
 };
 export async function dockerUpdateServiceList(
   serviceList: DockerApiServiceLsItem[],
@@ -89,10 +89,44 @@ async function dockerUpdateServiceItem(
   // Проверка и удаление всех сервисов + ThrowError
   await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
 
+  let registryAuth = false;
+
+  // Работа с регистри
+  const registryAuthLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+    return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+  });
+  if (registryAuthLabelObj && registryAuthLabelObj[1] === 'true') {
+    registryAuth = true;
+
+    const registryUserLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+    });
+    const registryPasswordLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+    });
+    const registryUrlLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+    });
+
+    const registryUser = registryUserLabelObj ? registryUserLabelObj[1] : getProcessEnv().SWARM_UTILS_REGISTRY_USER;
+    const registryPassword = registryPasswordLabelObj
+      ? registryPasswordLabelObj[1]
+      : getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD;
+      const registryUrl = registryUrlLabelObj ? registryUrlLabelObj[1] : getProcessEnv().SWARM_UTILS_REGISTRY_URL;
+
+    if (registryUser.length > 0 && registryPassword.length > 0 && registryUrl.length > 0) {
+      await dockerApiLogin({
+        user: registryUser,
+        password: registryPassword,
+        registryUrl: registryUrl,
+      });
+    }
+  }
+
   // Генерация команды для обновления сервиса
   const execCommand = dockerApiServiceUpdateCmd(serviceItem.Name, {
     image: params.image,
-    registryAuth: params.registryAuth,
+    registryAuth: registryAuth,
     force: params.force,
   });
 

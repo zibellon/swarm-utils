@@ -7,7 +7,6 @@ const router = Router();
 router.post('/api/update/service', async (req, res, next) => {
   const tokenBody = req.body.token;
   const serviceNameBody = req.body.serviceName;
-  const isRegistryAuthBody = req.body.isRegistryAuth;
   const isForceBody = req.body.isForce;
   const imageBody = req.body.image;
 
@@ -23,14 +22,19 @@ router.post('/api/update/service', async (req, res, next) => {
     });
     return;
   }
+  if (typeof imageBody !== 'string' || imageBody.length === 0) {
+    res.status(400).json({
+      message: 'Incorrect request',
+    });
+    return;
+  }
 
   try {
     await updateServiceExec({
       token: tokenBody,
       serviceName: serviceNameBody,
-      registryAuth: typeof isRegistryAuthBody === 'boolean' ? isRegistryAuthBody : false,
       force: typeof isForceBody === 'boolean' ? isForceBody : false,
-      image: typeof imageBody === 'string' && imageBody.length > 0 ? imageBody : undefined,
+      image: imageBody,
     });
   } catch (err) {
     logError('request.update.API_ERROR', err, {

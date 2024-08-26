@@ -1,19 +1,16 @@
-import { dockerRegistryIsCanAuth } from 'src/utils/docker/utils-docker';
-import { dockerApiLogin, dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
+import { dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
 import { dockerUpdateServiceList } from 'src/utils/docker/utils-docker-update-service';
-import { getProcessEnv } from 'src/utils/utils-env-config';
+import { authIsTokenAdmin } from 'src/utils/utils-auth';
 import { logWarn } from 'src/utils/utils-logger';
-import { tokenIsAdmin } from 'src/utils/utils-token';
 
 type UpdateServiceExecParams = {
   token: string;
   serviceName: string;
-  registryAuth: boolean;
   force: boolean;
-  image?: string;
+  image: string;
 };
 export async function updateServiceExec(params: UpdateServiceExecParams) {
-  const isAdmin = tokenIsAdmin(params.token);
+  const isAdmin = authIsTokenAdmin(params.token);
 
   const filterList: DockerApiServiceLsFilter[] = [
     {
@@ -39,22 +36,7 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
     });
     return;
   }
-
-  let registryAuth = false;
-
-  // Если нужна авторизация (Передается через query)
-  if (params.registryAuth === true && dockerRegistryIsCanAuth()) {
-    await dockerApiLogin({
-      user: getProcessEnv().SWARM_UTILS_REGISTRY_USER,
-      password: getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD,
-      registryUrl: getProcessEnv().SWARM_UTILS_REGISTRY_URL,
-    });
-    registryAuth = true;
-  }
-
-  // Запуск сервиса для выполнения update CMD
-  await dockerUpdateServiceList(serviceList, {
-    registryAuth: params.registryAuth,
+  await dockerUpdateServiceList([serviceList[0]], {
     force: params.force,
     image: params.image,
   });
