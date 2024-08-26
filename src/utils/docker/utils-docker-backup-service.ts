@@ -348,7 +348,7 @@ async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
     constraint: `node.id==${nodeId}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
+    execShell: '/bin/sh',
     execCommand: dockerExecCommand,
   });
   logInfo('dockerBackupServiceExec.exec.WAIT_FOR_COMPLETE', logData2);
@@ -384,7 +384,7 @@ async function dockerBackupServiceStop(serviceItem: DockerApiServiceLsItem) {
     constraint: `node.role==manager`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
+    execShell: '/bin/sh',
     execCommand: scaleDownCmd,
   });
   logInfo('dockerBackupServiceStop.scaleDown.WAIT_FOR_COMPLETE', logData2);
@@ -442,6 +442,7 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
     'restart-condition': 'none',
     envList: envList,
     mountList: mappedVolumeList,
+    execShell: '/bin/sh',
     execCommand: 'backup && exit', // offen/docker-volume-backup:v2.43.0 -c 'backup && exit'
   });
   logInfo('dockerBackupServiceUploadVolumeList.upload.WAIT_FOR_COMPLETE', logData2);
@@ -481,7 +482,7 @@ async function dockerBackupServiceStart(serviceItem: DockerApiServiceLsItem, rep
     constraint: `node.role==manager`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
+    execShell: '/bin/sh',
     execCommand: scaleUpCmd,
   });
   logInfo('dockerBackupServiceStart.scaleUp.WAIT_FOR_COMPLETE', logData2);

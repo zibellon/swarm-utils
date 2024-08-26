@@ -223,7 +223,7 @@ export type DockerApiServiceCreateParams = {
   mountList?: string[]; // type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly
   envList?: string[]; // BACKUP_CRON_EXPRESSION=\"0 0 5 31 2 ?\", BACKUP_RETENTION_DAYS=5
   image: string; // docker:25.0.5-cli-alpine3.20
-  execShell?: 'sh' | 'bash';
+  execShell?: string;
   execCommand?: string;
 };
 export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {

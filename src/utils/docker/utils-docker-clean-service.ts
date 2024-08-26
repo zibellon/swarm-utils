@@ -204,7 +204,7 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
     constraint: `node.id==${nodeId}`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
+    execShell: '/bin/sh',
     execCommand: dockerExecCommand,
   });
   logInfo('dockerCleanServiceItemExecOnTask.exec.WAIT_FOR_COMPLETE', logData2);

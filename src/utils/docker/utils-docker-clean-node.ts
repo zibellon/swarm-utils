@@ -114,7 +114,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       constraint: `node.id==${nodeItem.ID}`,
       'restart-condition': 'none',
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-      execShell: 'sh',
+      execShell: '/bin/sh',
       execCommand: 'docker image prune -a -f',
     });
     logInfo('dockerCleanNodeItem.image.WAIT_FOR_COMPLETE', logData2);
@@ -145,7 +145,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       constraint: `node.id==${nodeItem.ID}`,
       'restart-condition': 'none',
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-      execShell: 'sh',
+      execShell: '/bin/sh',
       execCommand: 'docker builder prune -f',
     });
     logInfo('dockerCleanNodeItem.builder.WAIT_FOR_COMPLETE', logData2);
@@ -175,7 +175,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       constraint: `node.id==${nodeItem.ID}`,
       'restart-condition': 'none',
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-      execShell: 'sh',
+      execShell: '/bin/sh',
       execCommand: 'docker container prune -f',
     });
     logInfo('dockerCleanNodeItem.container.WAIT_FOR_COMPLETE', logData2);

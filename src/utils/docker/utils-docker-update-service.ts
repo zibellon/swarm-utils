@@ -118,7 +118,7 @@ async function dockerUpdateServiceItem(
     constraint: `node.role==manager`,
     'restart-condition': 'none',
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
-    execShell: 'sh',
+    execShell: '/bin/sh',
     execCommand: execCommand,
   });
   logInfo('dockerUpdateServiceItem.exec.WAIT_FOR_COMPLETE', logData2);
