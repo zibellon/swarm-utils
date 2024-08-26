@@ -99,13 +99,13 @@ async function dockerUpdateServiceItem(
     registryAuth = true;
 
     const registryUserLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+      return el[0] === 'swarm-utils.update.registry.user' && el[1].length > 0;
     });
     const registryPasswordLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+      return el[0] === 'swarm-utils.update.registry.password' && el[1].length > 0;
     });
     const registryUrlLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.auth' && el[1].length > 0;
+      return el[0] === 'swarm-utils.update.registry.url' && el[1].length > 0;
     });
 
     const registryUser = registryUserLabelObj ? registryUserLabelObj[1] : getProcessEnv().SWARM_UTILS_REGISTRY_USER;
