@@ -14,6 +14,7 @@ import { dockerLogInspectServiceItem } from './utils-docker-logs';
 
 type DockerUpdateServiceParams = {
   registryAuth: boolean;
+  force: boolean;
   image?: string;
 };
 export async function dockerUpdateServiceList(
@@ -92,6 +93,7 @@ async function dockerUpdateServiceItem(
   const execCommand = dockerApiServiceUpdateCmd(serviceItem.Name, {
     image: params.image,
     registryAuth: params.registryAuth,
+    force: params.force,
   });
 
   logInfo('dockerUpdateServiceItem.EXEC_COMMAND', {

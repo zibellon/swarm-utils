@@ -9,9 +9,9 @@ type UpdateServiceExecParams = {
   token: string;
   serviceName: string;
   registryAuth: boolean;
+  force: boolean;
   image?: string;
 };
-
 export async function updateServiceExec(params: UpdateServiceExecParams) {
   const isAdmin = tokenIsAdmin(params.token);
 
@@ -55,6 +55,7 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
   // Запуск сервиса для выполнения update CMD
   await dockerUpdateServiceList(serviceList, {
     registryAuth: params.registryAuth,
+    force: params.force,
     image: params.image,
   });
 }

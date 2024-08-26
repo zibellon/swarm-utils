@@ -156,9 +156,13 @@ export async function dockerApiServicePs(serviceName: string, filterList: Docker
 export type DockerApiServiceUpdateParams = {
   registryAuth?: boolean;
   image?: string; // image-name:tag
+  force?: boolean;
 };
 export function dockerApiServiceUpdateCmd(serviceName: string, params: DockerApiServiceUpdateParams = {}) {
-  let cmd = `docker service update ${serviceName} --force`;
+  let cmd = `docker service update ${serviceName}`;
+  if (typeof params.force === 'boolean' && params.force === true) {
+    cmd += ` --force`;
+  }
   if (typeof params.registryAuth === 'boolean' && params.registryAuth === true) {
     cmd += ` --with-registry-auth`;
   }

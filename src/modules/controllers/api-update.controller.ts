@@ -8,6 +8,7 @@ router.post('/api/update/service', async (req, res, next) => {
   const tokenBody = req.body.token;
   const serviceNameBody = req.body.serviceName;
   const isRegistryAuthBody = req.body.isRegistryAuth;
+  const isForceBody = req.body.isForce;
   const imageBody = req.body.image;
 
   if (typeof tokenBody !== 'string' || tokenBody.length === 0) {
@@ -28,6 +29,7 @@ router.post('/api/update/service', async (req, res, next) => {
       token: tokenBody,
       serviceName: serviceNameBody,
       registryAuth: typeof isRegistryAuthBody === 'boolean' ? isRegistryAuthBody : false,
+      force: typeof isForceBody === 'boolean' ? isForceBody : false,
       image: typeof imageBody === 'string' && imageBody.length > 0 ? imageBody : undefined,
     });
   } catch (err) {
