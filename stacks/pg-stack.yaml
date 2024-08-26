@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   master:
@@ -13,6 +13,7 @@ services:
         mode: host
     volumes:
       - some-shop-pg-data:/var/lib/postgresql/data
+      - some-shop-pg-backup-data:/tmp-backup
     networks:
       main-overlay-net:
         aliases:
@@ -24,10 +25,20 @@ services:
         constraints:
           - node.hostname==internal-worker-2
       labels:
-        - "traefik.enable=false"
+        - 'traefik.enable=false'
+        # swarm-utils
+        - 'swarm-utils.backup.enable=true'
+        - 'swarm-utils.backup.exec=pg_dump -U postgres some_shop_db_name | gzip > /tmp-backup/pg_dump.sql.gz'
+        - 'swarm-utils.backup.exec.shell=/bin/sh'
+        - 'swarm-utils.backup.stop=true'
+        - 'swarm-utils.backup.volume-list-upload=some-shop-pg-backup-data'
+        - 'swarm-utils.backup.volume-list-upload.retention-days=8'
+        - 'swarm-utils.backup.token=aaasssddd333'
 
 volumes:
   some-shop-pg-data:
+    external: true
+  some-shop-pg-backup-data:
     external: true
 
 networks:

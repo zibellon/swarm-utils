@@ -14,11 +14,18 @@ services:
         constraints:
           - node.role==Worker
       labels:
-        # swarm-utils
+        # swarm-utils.clean
         - "swarm-utils.clean.enable=true"
         - "swarm-utils.clean.exec=ls -la && pwd && whoami"
         - "swarm-utils.clean.exec.shell=/bin/bash"
         - "swarm-utils.clean.token=qweasd"
+        # swarm-utils.update
+        - "swarm-utils.update.enable=true"
+        - "swarm-utils.update.registry.auth=true"
+        - "swarm-utils.update.registry.user=some_username"
+        - "swarm-utils.update.registry.password=some_secret_password"
+        - "swarm-utils.update.registry.url=gitlab-registry.domain.com"
+        - "swarm-utils.update.token=some_update_token"
 
 networks:
   main-overlay-net:
