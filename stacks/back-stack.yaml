@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  master:
+    image: reqistry/some-shop-back:latest
+    networks:
+      main-overlay-net:
+        aliases:
+          - some-shop-back
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role==Worker
+      labels:
+        # swarm-utils
+        - "swarm-utils.clean.enable=true"
+        - "swarm-utils.clean.exec=ls -la && pwd && whoami"
+        - "swarm-utils.clean.exec-shell=/bin/bash"
+        - "swarm-utils.clean.token=qweasd"
+
+networks:
+  main-overlay-net:
+    external: true

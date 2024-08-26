@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  master:
+    image: ghcr.io/zibellon/swarm-utils:0.0.13
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SWARM_UTILS_IS_CRON_BACKUP_SERVICE=false
+      - SWARM_UTILS_IS_CRON_CLEAN_SERVICE=false
+      - SWARM_UTILS_IS_CRON_CLEAN_NODE=false
+      # - SWARM_UTILS_CRON_EXPR='* * * * *'
+      - SWARM_UTILS_ADMIN_TOKEN_LIST=aaaaaa,bbbbbb,cccccc
+      - SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
+      - SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL=/bin/sh
+      - SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL=/bin/sh
+      - SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT=600000
+      - SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT=60000
+      - SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT=600000
+      - SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT=600000
+      - SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT=60000
+      - SWARM_UTILS_UPDATE_SERVICE_TIMEOUT=300000
+      - SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT=120000
+      - SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT=120000
+      - SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT=120000
+      - SWARM_UTILS_PENDING_SERVICE_TIMEOUT=20000
+      - SWARM_UTILS_LOCK_TIMEOUT=10000
+      - SWARM_UTILS_EXTRA_TIMEOUT=10000
+      - SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+      - SWARM_UTILS_S3_HTTPS=true
+      - SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
+      - SWARM_UTILS_S3_ACCESS_KEY=...
+      - SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+      - SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
+      - SWARM_UTILS_REGISTRY_USER=master_user
+      - SWARM_UTILS_REGISTRY_PASSWORD=password/token
+      - SWARM_UTILS_REGISTRY_URL=registry.domain.com
+    ports:
+      - target: 3000
+        published: 6556
+        protocol: tcp
+        mode: host
+    networks:
+      main-overlay-net:
+        aliases:
+          - swarm-utils
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.node-type==Manager
+      labels:
+        - "traefik.enable=false"
+
+networks:
+  main-overlay-net:
+    external: true

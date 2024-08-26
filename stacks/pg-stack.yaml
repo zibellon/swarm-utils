@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  master:
+    image: postgres:15.6-alpine
+    environment:
+      - POSTGRES_PASSWORD=super_secret_password
+      - POSTGRES_USER=postgres
+    ports:
+      - target: 5432
+        published: 5566
+        protocol: tcp
+        mode: host
+    volumes:
+      - some-shop-pg-data:/var/lib/postgresql/data
+    networks:
+      main-overlay-net:
+        aliases:
+          - some-shop-pg
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname==internal-worker-2
+      labels:
+        - "traefik.enable=false"
+
+volumes:
+  some-shop-pg-data:
+    external: true
+
+networks:
+  main-overlay-net:
+    external: true
