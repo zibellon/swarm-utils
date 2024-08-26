@@ -306,8 +306,8 @@ async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
   };
   logInfo('dockerBackupServiceExec.INIT', logData);
 
-  const taskInspectInfo = await dockerApiInspectTask(params.taskItem.ID);
-  if (!taskInspectInfo) {
+  const inspectTaskInfo = await dockerApiInspectTask(params.taskItem.ID);
+  if (!inspectTaskInfo) {
     logWarn('dockerbackupServiceExec.taskInspect.NULL', logData);
     return;
   }
@@ -317,12 +317,12 @@ async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
   await dockerCheckAndRmHelpServices([execServiceName]);
 
   // Получить id контейнера - в котором нужно сделать exec команду
-  const containerId = taskInspectInfo.Status.ContainerStatus.ContainerID;
-  const nodeId = taskInspectInfo.NodeID;
+  const containerId = inspectTaskInfo.Status.ContainerStatus.ContainerID;
+  const nodeId = inspectTaskInfo.NodeID;
 
   logInfo('dockerBackupServiceExec.TASK_INSPECT', {
     ...logData,
-    taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
+    inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
     containerId,
     nodeId,
   });

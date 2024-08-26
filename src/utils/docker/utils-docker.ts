@@ -67,14 +67,14 @@ export async function dockerServiceCanRemove(serviceName: string) {
       logInfo('dockerServiceCanRemove.taskItem.canRemove.FALSE', logData);
       continue;
     }
-    const taskInspectInfo = await dockerApiInspectTask(taskItem.ID);
-    if (taskInspectInfo === null) {
+    const inspectTaskInfo = await dockerApiInspectTask(taskItem.ID);
+    if (inspectTaskInfo === null) {
       logInfo('dockerServiceCanRemove.taskItem.inspect.NULL', logData);
       continue;
     }
     logInfo('dockerServiceCanRemove.taskItem.inspect.OK', {
       ...logData,
-      taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
+      inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
     });
 
     // Сервис НЕЛЬЗЯ удалять в двух случаях
@@ -87,13 +87,13 @@ export async function dockerServiceCanRemove(serviceName: string) {
 
     // Есть таска "Status.State": "running" || "DesiredState": "shutdown"
     if (
-      taskInspectInfo.DesiredState.toLocaleLowerCase() !== 'shutdown' ||
-      taskInspectInfo.Status.State.toLowerCase() === 'running'
+      inspectTaskInfo.DesiredState.toLocaleLowerCase() !== 'shutdown' ||
+      inspectTaskInfo.Status.State.toLowerCase() === 'running'
     ) {
       canRemove = false;
-    } else if (taskInspectInfo.Status.State.toLowerCase() === 'pending') {
+    } else if (inspectTaskInfo.Status.State.toLowerCase() === 'pending') {
       // Есть таска в статусе pending AND createdAt + 30 sec > Now(). (set in ENV)
-      const createdAt = new Date(taskInspectInfo.CreatedAt);
+      const createdAt = new Date(inspectTaskInfo.CreatedAt);
       const now = new Date();
       logInfo('dockerServiceCanRemove.taskItempending.INIT', {
         ...logData,

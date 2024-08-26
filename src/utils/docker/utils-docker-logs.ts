@@ -15,8 +15,12 @@ export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
   delete result.Spec.TaskTemplate.LogDriver;
   delete result.Spec.TaskTemplate.Networks;
   delete result.Spec.TaskTemplate.Runtime;
+  delete result.Spec.TaskTemplate.Placement.Platforms
+  delete result.Spec.TaskTemplate.ContainerSpec.Mounts;
   delete result.Spec.TaskTemplate.ContainerSpec.Privileges;
   delete result.Spec.TaskTemplate.ContainerSpec.DNSConfig;
+  delete result.Spec.TaskTemplate.ContainerSpec.Isolation;
+  delete result.Spec.TaskTemplate.ContainerSpec.StopGracePeriod;
   delete result.Spec.TaskTemplate.ContainerSpec.Env;
   delete result.Spec.TaskTemplate.ContainerSpec.Labels;
   return result;
@@ -25,12 +29,17 @@ export function dockerLogInspectServiceItem(item: DockerApiInspectServiceItem) {
 export function dockerLogInspectTaskItem(item: DockerApiInspectTaskItem) {
   const result = JSON.parse(JSON.stringify(item));
   delete result.NetworksAttachments;
+  delete result.Volumes;
   delete result.Spec.Resources;
   delete result.Spec.Networks;
   delete result.Spec.LogDriver;
+  delete result.Spec.RestartPolicy;
+  delete result.Spec.Placement.Platforms;
+  delete result.Spec.ContainerSpec.Mounts;
+  delete result.Spec.ContainerSpec.Privileges;
+  delete result.Spec.ContainerSpec.DNSConfig;
   delete result.Spec.ContainerSpec.Env;
   delete result.Spec.ContainerSpec.Labels;
-  delete result.Spec.ContainerSpec.Privileges;
   delete result.Spec.ContainerSpec.Isolation;
   return result;
 }

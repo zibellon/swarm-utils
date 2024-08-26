@@ -162,8 +162,8 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
   };
   logInfo('dockerCleanServiceItemExecOnTask.INIT', logData);
 
-  const taskInspectInfo = await dockerApiInspectTask(params.taskItem.ID);
-  if (!taskInspectInfo) {
+  const inspectTaskInfo = await dockerApiInspectTask(params.taskItem.ID);
+  if (!inspectTaskInfo) {
     logWarn('dockerCleanServiceItemExecOnTask.taskInspect.NULL', logData);
     return;
   }
@@ -173,12 +173,12 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
   await dockerCheckAndRmHelpServices([execServiceName]);
 
   // Получить id контейнера - в котором нужно сделать exec команду
-  const containerId = taskInspectInfo.Status.ContainerStatus.ContainerID;
-  const nodeId = taskInspectInfo.NodeID;
+  const containerId = inspectTaskInfo.Status.ContainerStatus.ContainerID;
+  const nodeId = inspectTaskInfo.NodeID;
 
   logInfo('dockerCleanServiceItemExecOnTask.TASK_INSPECT', {
     ...logData,
-    taskInspectInfo: dockerLogInspectTaskItem(taskInspectInfo),
+    inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
     containerId,
     nodeId,
   });
