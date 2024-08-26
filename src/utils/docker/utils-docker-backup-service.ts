@@ -179,7 +179,7 @@ async function dockerBackupServiceItem(
     return el[0] === 'swarm-utils.backup.exec' && el[1].length > 0;
   });
   const execShellLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-    return el[0] === 'swarm-utils.backup.exec-shell' && el[1].length > 0;
+    return el[0] === 'swarm-utils.backup.exec.shell' && el[1].length > 0;
   });
   logInfo('dockerBackupServiceItem.exec.execLabelObj.INIT', {
     ...logData,
@@ -239,7 +239,18 @@ async function dockerBackupServiceItem(
   //---------
   // UPLOAD
   //---------
+  const retentionDaysLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+    return el[0] === 'swarm-utils.backup.volume-list-upload.retention-days' && el[1].length > 0;
+  });
   if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
+    let retentionDays = getProcessEnv().SWARM_UTILS_S3_BACKUP_RETENTION_DAYS;
+    if (retentionDaysLabelObj) {
+      const tryNumber = Number(retentionDaysLabelObj[1]);
+      if (!isNaN(tryNumber)) {
+        retentionDays = tryNumber;
+      }
+    }
+
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
       const logData2 = {
         ...logData,
@@ -249,7 +260,12 @@ async function dockerBackupServiceItem(
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
         // Непосредственно UPLOAD
-        await dockerBackupServiceUploadVolumeList(serviceItem, nodeId, [...volumeSet]);
+        await dockerBackupServiceUploadVolumeList({
+          serviceItem,
+          nodeId,
+          volumeList: [...volumeSet],
+          retentionDays,
+        });
         logInfo('dockerBackupServiceItem.nodeId.upload.OK', logData2);
       } catch (err) {
         logError('dockerBackupServiceItem.nodeId.upload.ERR', err, logData2);
@@ -377,33 +393,33 @@ async function dockerBackupServiceStop(serviceItem: DockerApiServiceLsItem) {
   logInfo('dockerBackupServiceStop.scaleDown.OK', logData2);
 }
 
-async function dockerBackupServiceUploadVolumeList(
-  serviceItem: DockerApiServiceLsItem,
-  nodeId: string,
-  volumeList: string[]
-) {
+type DockerBackupServiceUploadVolumeListParams = {
+  serviceItem: DockerApiServiceLsItem;
+  nodeId: string;
+  volumeList: string[];
+  retentionDays: number;
+};
+async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUploadVolumeListParams) {
   const logData = {
-    serviceItem,
-    nodeId,
-    volumeList,
+    ...params,
   };
   logInfo('dockerBackupServiceUploadVolumeList.INIT', logData);
 
-  const uploadServiceName = nameBackupServiceTarUpload(serviceItem.Name);
+  const uploadServiceName = nameBackupServiceTarUpload(params.serviceItem.Name);
   // Проверка и удаление сервиса + ThrowError
   await dockerCheckAndRmHelpServices([uploadServiceName]);
 
   const envList = [
     `BACKUP_CRON_EXPRESSION="0 0 5 31 2 ?"`,
-    `BACKUP_RETENTION_DAYS=${getProcessEnv().SWARM_UTILS_S3_BACKUP_RETENTION_DAYS}`,
+    `BACKUP_RETENTION_DAYS=${params.retentionDays}`,
     `BACKUP_COMPRESSION=gz`,
-    `BACKUP_FILENAME=backup-${nodeId}-${serviceItem.Name}-%Y-%m-%dT%H-%M-%S.tar.gz`,
+    `BACKUP_FILENAME=backup-${params.nodeId}-${params.serviceItem.Name}-%Y-%m-%dT%H-%M-%S.tar.gz`,
     `AWS_ENDPOINT=${getProcessEnv().SWARM_UTILS_S3_DOMAIN}`,
     `AWS_S3_BUCKET_NAME=${getProcessEnv().SWARM_UTILS_S3_BUCKET_NAME}`,
     `AWS_ACCESS_KEY_ID=${getProcessEnv().SWARM_UTILS_S3_ACCESS_KEY}`,
     `AWS_SECRET_ACCESS_KEY=${getProcessEnv().SWARM_UTILS_S3_SECRET_ACCESS_KEY}`,
   ];
-  const mappedVolumeList = volumeList.map((volumeName) => {
+  const mappedVolumeList = params.volumeList.map((volumeName) => {
     return `type=volume,source=${volumeName},target=/backup/${volumeName}`; // type=volume,source=$volumeName,target=/backup/$volumeName
   });
 
@@ -422,7 +438,7 @@ async function dockerBackupServiceUploadVolumeList(
     image: 'offen/docker-volume-backup:v2.43.0',
     mode: 'replicated',
     replicas: 1,
-    constraint: `node.id==${nodeId}`,
+    constraint: `node.id==${params.nodeId}`,
     'restart-condition': 'none',
     envList: envList,
     mountList: mappedVolumeList,

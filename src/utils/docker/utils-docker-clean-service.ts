@@ -119,7 +119,7 @@ async function dockerCleanServiceItem(
   });
 
   const execShellLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-    return el[0] === 'swarm-utils.clean.exec-shell' && el[1].length > 0;
+    return el[0] === 'swarm-utils.clean.exec.shell' && el[1].length > 0;
   });
 
   // Проверка и удаление всех сервисов + ThrowError

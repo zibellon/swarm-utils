@@ -17,7 +17,7 @@ services:
         # swarm-utils
         - "swarm-utils.clean.enable=true"
         - "swarm-utils.clean.exec=ls -la && pwd && whoami"
-        - "swarm-utils.clean.exec-shell=/bin/bash"
+        - "swarm-utils.clean.exec.shell=/bin/bash"
         - "swarm-utils.clean.token=qweasd"
 
 networks:

@@ -94,15 +94,16 @@
 1. swarm-utils.clean
    1. enable=true/false
    2. exec
-   3. exec-shell='/bin/bash'
+   3. exec.shell='/bin/bash'
    4. token
 2. swarm-utils.backup
    1. enable=true/false
    2. exec
-   3. exec-shell='/bin/sh'
+   3. exec.shell='/bin/sh'
    4. stop=true/false
    5. volume-list-upload=volume1,volume2,volume3,...
-   6. token
+   6. volume-list-upload.retention-days=8
+   7. token
 3. swarm-utils.update
    1. enable=true/false
    2. token
@@ -281,15 +282,13 @@
     2.  Если указан этот параметр - работа ведется сразу по всем доступным Services (На основе токена и labels=token-list)
 11. API. Во все методы - добавить параметр waitRes=true/false
     1.  Если ждать ответ не надо - запускать без await. И сразу отдать res: процесс запущен
-12. labels. Добавить для каждого сервиса - сколько живут бэкапы
-    1.  Сейчас стоит ХАРДКОД - 5 дней
-13. label (NODE / SERVICE). Переделать: token -> token-list
+12. label (NODE / SERVICE). Переделать: token -> token-list
     1.  Идея: Чтобы передать сразу список токенов, которые имеют доступ
-14. labels. Добавить exec-shell (NODE / SERVICE) + ENV
+13. labels. Добавить exec.shell (NODE / SERVICE) + ENV
     1.  Везде где есть exec - можно указать, какой shell использовать для вызова команд
-15. Вопрос безопасности.
+14. Вопрос безопасности.
     1.  Отдельная overlay сеть, --attach
-16. Labels. Добавить labels для Node
+15. Labels. Добавить labels для Node
     1.  swarm-utils.clean
         1.  enable=true/false
         2.  exec
@@ -299,3 +298,11 @@
         2.  exec
         3.  volume-list-upload=volume1,volume2,volume3,...
         4.  token
+16. Добавить ENV переменную для маскирования логов
+    1.  Скрыкает полный вывод в команде bashExec. Добавляет звездочки
+17. Добавить API методы
+    1.  получение списка Service
+    2.  получение писка Service по labels
+    3.  Получение списка Nodes по Labels
+18. Уменьшить общее количество логов
+    1.  Сейчас для CLEAN одного сервиса - тонна логов....
