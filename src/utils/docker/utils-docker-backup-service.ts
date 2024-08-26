@@ -435,15 +435,15 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
   await dockerApiServiceCreate({
     detach: true,
     name: uploadServiceName,
-    image: 'offen/docker-volume-backup:v2.43.0',
+    image: 'ghcr.io/offen/docker-volume-backup:v2.43.0',
     mode: 'replicated',
     replicas: 1,
     constraint: `node.id==${params.nodeId}`,
     'restart-condition': 'none',
     envList: envList,
     mountList: mappedVolumeList,
-    execShell: '/bin/sh',
-    execCommand: 'backup && exit', // offen/docker-volume-backup:v2.43.0 -c 'backup && exit'
+    entrypoint: '/bin/sh',
+    execCommand: '/usr/bin/backup && exit', // offen/docker-volume-backup:v2.43.0 -c 'backup && exit'
   });
   logInfo('dockerBackupServiceUploadVolumeList.upload.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
