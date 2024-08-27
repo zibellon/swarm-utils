@@ -8,6 +8,7 @@ export type MaskItem = {
 };
 export type BashExecParams = {
   maskList?: MaskItem[];
+  cleanLogRegexList?: RegExp[];
 };
 export async function bashExec(inputCommand: string, params?: BashExecParams) {
   let logInputCommand = inputCommand;
@@ -34,10 +35,14 @@ export async function bashExec(inputCommand: string, params?: BashExecParams) {
     result.stderr = result.stderr.replace(/^\s+|\s+$/g, '');
 
     let stdoutLog = result.stdout;
-    // Удаление свойства Env
-    stdoutLog = stdoutLog.replace(/"Env"\s*:\s*\[[^\]]*\],?\s*/g, '');
-    // Удаление свойства Labels
-    stdoutLog = stdoutLog.replace(/"Labels"\s*:\s*\{[^}]*\},?\s*/g, '');
+
+    // Чистка лога от лишних полей. Если указано
+    if (params && params.cleanLogRegexList && params.cleanLogRegexList.length > 0) {
+      for (const reg of params.cleanLogRegexList) {
+        // Удаление свойства Env
+        stdoutLog = stdoutLog.replace(reg, '');
+      }
+    }
 
     const resultLog = {
       pid: result.pid,
