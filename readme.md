@@ -114,17 +114,17 @@
    1. 10 секунд - сколько времени на уствновку блокировки. Значение в MS
 21. SWARM_UTILS_EXTRA_TIMEOUT=10000
     1.  Дополнительное время для блокировки. Задержки сети и ТД. Значение в MS
-22. SWARM_UTILS_S3_DOMAIN=s3-api.domain.com
+22. SWARM_UTILS_S3_URL=s3-api.domain.com
     1.  Доменное имя где находится облако S3
 23. SWARM_UTILS_S3_HTTPS=true
     1.  Использовать HTTPS или нет. Если нет - подключение будет идти через http://
-24. SWARM_UTILS_S3_BUCKET_NAME=my-bucket-name
-    1.  Название игслуе - куда заливать бэкап
-25. SWARM_UTILS_S3_ACCESS_KEY=...
+24. SWARM_UTILS_S3_ACCESS_KEY=...
     1.  Ключ для доступа к S3
-26. SWARM_UTILS_S3_SECRET_ACCESS_KEY=...
+25. SWARM_UTILS_S3_SECRET_KEY=...
     1.  Секрет для доступа к S3
-27. SWARM_UTILS_S3_BACKUP_RETENTION_DAYS=5
+26. SWARM_UTILS_S3_BUCKET=my-bucket-name
+    1.  Название bucket - куда заливать бэкап
+27. SWARM_UTILS_S3_RETENTION_DAYS=5
     1.  Сколько времени живет каждый бэкап в S3
 28. SWARM_UTILS_REGISTRY_USER=root
     1.  Имя пользователя, для доступа к регистри
@@ -146,8 +146,13 @@
    3. exec.shell='/bin/sh'
    4. stop=true/false
    5. volume-list-upload=volume1,volume2,volume3,...
-   6. volume-list-upload.retention-days=8
-   7. token
+   6. volume-list-upload.s3.url=s3-api.domain.com
+   7. volume-list-upload.s3.https=true/false
+   8. volume-list-upload.s3.access-key=...
+   9.  volume-list-upload.s3.secret-key=...
+   10. volume-list-upload.s3.bucket=...
+   11. volume-list-upload.s3.retention-days=8
+   12. token
 3. swarm-utils.update
    1. enable=true/false
    2. registry.auth=true/false

@@ -1,4 +1,6 @@
+import { authGetS3Params, AuthGetS3ParamsRes } from '../utils-auth';
 import { getProcessEnv } from '../utils-env-config';
+import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import {
@@ -8,7 +10,6 @@ import {
   nameBackupServiceTarUpload,
   nameLock,
 } from '../utils-names';
-import { authIsS3Enable } from '../utils-auth';
 import {
   dockerCheckAndRmHelpServices,
   dockerCheckAndRmHelpServicesForService,
@@ -239,16 +240,10 @@ async function dockerBackupServiceItem(
   //---------
   // UPLOAD
   //---------
-  const retentionDaysLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-    return el[0] === 'swarm-utils.backup.volume-list-upload.retention-days' && el[1].length > 0;
-  });
-  if (nodeVolumeListMap.size > 0 && authIsS3Enable()) {
-    let retentionDays = getProcessEnv().SWARM_UTILS_S3_BACKUP_RETENTION_DAYS;
-    if (retentionDaysLabelObj) {
-      const tryNumber = Number(retentionDaysLabelObj[1]);
-      if (!isNaN(tryNumber)) {
-        retentionDays = tryNumber;
-      }
+  if (nodeVolumeListMap.size > 0) {
+    const s3Params = authGetS3Params(inspectServiceInfo.Spec.Labels, 'swarm-utils.backup.volume-list-upload');
+    if (s3Params === null) {
+      throwErrorSimple('dockerBackupServiceItem.s3Params.NULL', logData);
     }
 
     for (const [nodeId, volumeSet] of [...nodeVolumeListMap.entries()]) {
@@ -256,6 +251,7 @@ async function dockerBackupServiceItem(
         ...logData,
         nodeId,
         volumeList: [...volumeSet],
+        s3Params,
       };
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
@@ -264,7 +260,7 @@ async function dockerBackupServiceItem(
           serviceItem,
           nodeId,
           volumeList: [...volumeSet],
-          retentionDays,
+          s3Params,
         });
         logInfo('dockerBackupServiceItem.nodeId.upload.OK', logData2);
       } catch (err) {
@@ -397,7 +393,7 @@ type DockerBackupServiceUploadVolumeListParams = {
   serviceItem: DockerApiServiceLsItem;
   nodeId: string;
   volumeList: string[];
-  retentionDays: number;
+  s3Params: AuthGetS3ParamsRes;
 };
 async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUploadVolumeListParams) {
   const logData = {
@@ -411,13 +407,13 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
 
   const envList = [
     `BACKUP_CRON_EXPRESSION="0 0 5 31 2 ?"`,
-    `BACKUP_RETENTION_DAYS=${params.retentionDays}`,
+    `BACKUP_RETENTION_DAYS=${params.s3Params.retentionDays}`,
     `BACKUP_COMPRESSION=gz`,
     `BACKUP_FILENAME=backup-${params.nodeId}-${params.serviceItem.Name}-%Y-%m-%dT%H-%M-%S.tar.gz`,
-    `AWS_ENDPOINT=${getProcessEnv().SWARM_UTILS_S3_DOMAIN}`,
-    `AWS_S3_BUCKET_NAME=${getProcessEnv().SWARM_UTILS_S3_BUCKET_NAME}`,
-    `AWS_ACCESS_KEY_ID=${getProcessEnv().SWARM_UTILS_S3_ACCESS_KEY}`,
-    `AWS_SECRET_ACCESS_KEY=${getProcessEnv().SWARM_UTILS_S3_SECRET_ACCESS_KEY}`,
+    `AWS_ENDPOINT=${params.s3Params.url}`,
+    `AWS_S3_BUCKET_NAME=${params.s3Params.bucket}`,
+    `AWS_ACCESS_KEY_ID=${params.s3Params.accessKey}`,
+    `AWS_SECRET_ACCESS_KEY=${params.s3Params.secretKey}`,
   ];
   const mappedVolumeList = params.volumeList.map((volumeName) => {
     return `type=volume,source=${volumeName},target=/backup/${volumeName}`; // type=volume,source=$volumeName,target=/backup/$volumeName

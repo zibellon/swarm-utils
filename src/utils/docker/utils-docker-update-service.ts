@@ -1,4 +1,6 @@
+import { authGetRegistryAuthParams } from '../utils-auth';
 import { getProcessEnv } from '../utils-env-config';
+import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutUpdateService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameLock, nameUpdateService } from '../utils-names';
@@ -98,29 +100,12 @@ async function dockerUpdateServiceItem(
   if (registryAuthLabelObj && registryAuthLabelObj[1] === 'true') {
     registryAuth = true;
 
-    const registryUserLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.user' && el[1].length > 0;
-    });
-    const registryPasswordLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.password' && el[1].length > 0;
-    });
-    const registryUrlLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
-      return el[0] === 'swarm-utils.update.registry.url' && el[1].length > 0;
-    });
-
-    const registryUser = registryUserLabelObj ? registryUserLabelObj[1] : getProcessEnv().SWARM_UTILS_REGISTRY_USER;
-    const registryPassword = registryPasswordLabelObj
-      ? registryPasswordLabelObj[1]
-      : getProcessEnv().SWARM_UTILS_REGISTRY_PASSWORD;
-      const registryUrl = registryUrlLabelObj ? registryUrlLabelObj[1] : getProcessEnv().SWARM_UTILS_REGISTRY_URL;
-
-    if (registryUser.length > 0 && registryPassword.length > 0 && registryUrl.length > 0) {
-      await dockerApiLogin({
-        user: registryUser,
-        password: registryPassword,
-        registryUrl: registryUrl,
-      });
+    const registryAuthParams = authGetRegistryAuthParams(inspectServiceInfo.Spec.Labels, 'swarm-utils.update');
+    if (registryAuthParams === null) {
+      throwErrorSimple('dockerUpdateServiceItem.registryAuth.NULL', logData);
     }
+
+    await dockerApiLogin(registryAuthParams);
   }
 
   // Генерация команды для обновления сервиса

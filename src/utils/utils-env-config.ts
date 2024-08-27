@@ -36,12 +36,12 @@ class ProcessENV {
   public SWARM_UTILS_EXTRA_TIMEOUT = 10_000; // 10 секунд - сколько времени на уствновку блокировки
 
   // S3 (offen-backup)
-  public SWARM_UTILS_S3_DOMAIN = 's3-api.domain.com'; // Доменное имя где находится облако S3
+  public SWARM_UTILS_S3_URL = 's3-api.domain.com'; // Доменное имя где находится облако S3
   public SWARM_UTILS_S3_HTTPS = true; // Использовать HTTPS или нет. Если нет - подключение будет идти через http://
-  public SWARM_UTILS_S3_BUCKET_NAME = 'my-bucket-name'; // Название bucket - куда заливать бэкап
+  public SWARM_UTILS_S3_BUCKET = 'my-bucket-name'; // Название bucket - куда заливать бэкап
   public SWARM_UTILS_S3_ACCESS_KEY = '...'; // Ключ для доступа к S3
-  public SWARM_UTILS_S3_SECRET_ACCESS_KEY = '...'; // Секрет для доступа к S3
-  public SWARM_UTILS_S3_BACKUP_RETENTION_DAYS = 5; // Сколько времени живет бэкап в S3
+  public SWARM_UTILS_S3_SECRET_KEY = '...'; // Секрет для доступа к S3
+  public SWARM_UTILS_S3_RETENTION_DAYS = 5; // Сколько времени живет бэкап в S3
 
   // REGISTRY
   public SWARM_UTILS_REGISTRY_USER = ''; // Имя пользователя, для доступа к регистри
@@ -136,23 +136,23 @@ export function getProcessEnv(): ProcessENV {
     }
 
     //S3
-    if (typeof process.env.SWARM_UTILS_S3_DOMAIN === 'string') {
-      processENV.SWARM_UTILS_S3_DOMAIN = process.env.SWARM_UTILS_S3_DOMAIN;
+    if (typeof process.env.SWARM_UTILS_S3_URL === 'string') {
+      processENV.SWARM_UTILS_S3_URL = process.env.SWARM_UTILS_S3_URL;
     }
     if (typeof process.env.SWARM_UTILS_S3_HTTPS === 'string') {
       processENV.SWARM_UTILS_S3_HTTPS = process.env.SWARM_UTILS_S3_HTTPS === 'true';
     }
-    if (typeof process.env.SWARM_UTILS_S3_BUCKET_NAME === 'string') {
-      processENV.SWARM_UTILS_S3_BUCKET_NAME = process.env.SWARM_UTILS_S3_BUCKET_NAME;
+    if (typeof process.env.SWARM_UTILS_S3_BUCKET === 'string') {
+      processENV.SWARM_UTILS_S3_BUCKET = process.env.SWARM_UTILS_S3_BUCKET;
     }
     if (typeof process.env.SWARM_UTILS_S3_ACCESS_KEY === 'string') {
       processENV.SWARM_UTILS_S3_ACCESS_KEY = process.env.SWARM_UTILS_S3_ACCESS_KEY;
     }
-    if (typeof process.env.SWARM_UTILS_S3_SECRET_ACCESS_KEY === 'string') {
-      processENV.SWARM_UTILS_S3_SECRET_ACCESS_KEY = process.env.SWARM_UTILS_S3_SECRET_ACCESS_KEY;
+    if (typeof process.env.SWARM_UTILS_S3_SECRET_KEY === 'string') {
+      processENV.SWARM_UTILS_S3_SECRET_KEY = process.env.SWARM_UTILS_S3_SECRET_KEY;
     }
-    if (typeof process.env.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS === 'string') {
-      processENV.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS = Number(process.env.SWARM_UTILS_S3_BACKUP_RETENTION_DAYS);
+    if (typeof process.env.SWARM_UTILS_S3_RETENTION_DAYS === 'string') {
+      processENV.SWARM_UTILS_S3_RETENTION_DAYS = Number(process.env.SWARM_UTILS_S3_RETENTION_DAYS);
     }
 
     // REGISTRY
