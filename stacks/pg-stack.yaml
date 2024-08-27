@@ -32,7 +32,12 @@ services:
         - 'swarm-utils.backup.exec.shell=/bin/sh'
         - 'swarm-utils.backup.stop=true'
         - 'swarm-utils.backup.volume-list-upload=some-shop-pg-backup-data'
-        - 'swarm-utils.backup.volume-list-upload.retention-days=8'
+        - 'swarm-utils.backup.volume-list-upload.s3.url=s3-api.domain.com'
+        - 'swarm-utils.backup.volume-list-upload.s3.https=true'
+        - 'swarm-utils.backup.volume-list-upload.s3.access-key=...'
+        - 'swarm-utils.backup.volume-list-upload.s3.secret-key=...'
+        - 'swarm-utils.backup.volume-list-upload.s3.bucket=some_bucket_name'
+        - 'swarm-utils.backup.volume-list-upload.s3.retention-days=8'
         - 'swarm-utils.backup.token=aaasssddd333'
 
 volumes:
