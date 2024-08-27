@@ -104,7 +104,6 @@ async function dockerUpdateServiceItem(
     if (registryAuthParams === null) {
       throwErrorSimple('dockerUpdateServiceItem.registryAuth.NULL', logData);
     }
-
     await dockerApiLogin(registryAuthParams);
   }
 

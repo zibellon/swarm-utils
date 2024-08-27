@@ -1,4 +1,5 @@
 import { authGetS3Params, AuthGetS3ParamsRes } from '../utils-auth';
+import { MaskItem } from '../utils-bash';
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
@@ -251,7 +252,6 @@ async function dockerBackupServiceItem(
         ...logData,
         nodeId,
         volumeList: [...volumeSet],
-        s3Params,
       };
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
@@ -397,7 +397,9 @@ type DockerBackupServiceUploadVolumeListParams = {
 };
 async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUploadVolumeListParams) {
   const logData = {
-    ...params,
+    serviceItem: params.serviceItem,
+    nodeId: params.nodeId,
+    volumeList: params.volumeList,
   };
   logInfo('dockerBackupServiceUploadVolumeList.INIT', logData);
 
@@ -414,6 +416,20 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
     `AWS_S3_BUCKET_NAME=${params.s3Params.bucket}`,
     `AWS_ACCESS_KEY_ID=${params.s3Params.accessKey}`,
     `AWS_SECRET_ACCESS_KEY=${params.s3Params.secretKey}`,
+  ];
+  const maskList: MaskItem[] = [
+    {
+      str: `AWS_S3_BUCKET_NAME=${params.s3Params.bucket}`,
+      val: params.s3Params.bucket,
+    },
+    {
+      str: `AWS_ACCESS_KEY_ID=${params.s3Params.accessKey}`,
+      val: params.s3Params.accessKey,
+    },
+    {
+      str: `AWS_SECRET_ACCESS_KEY=${params.s3Params.secretKey}`,
+      val: params.s3Params.secretKey,
+    },
   ];
   const mappedVolumeList = params.volumeList.map((volumeName) => {
     return `type=volume,source=${volumeName},target=/backup/${volumeName}`; // type=volume,source=$volumeName,target=/backup/$volumeName
@@ -440,6 +456,7 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
     mountList: mappedVolumeList,
     entrypoint: '/bin/sh',
     execCommand: '/usr/bin/backup && exit', // offen/docker-volume-backup:v2.43.0 -c 'backup && exit'
+    maskList: maskList,
   });
   logInfo('dockerBackupServiceUploadVolumeList.upload.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE

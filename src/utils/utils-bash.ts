@@ -2,10 +2,27 @@ import { spawnSync } from 'child_process';
 import { throwErrorSimple } from './utils-error';
 import { logError, logInfo } from './utils-logger';
 
-export async function bashExec(inputCommand: string) {
+export type MaskItem = {
+  str: string; // -e AWS_SECRET_KEY=asdqwe123
+  val: string; // asdqwe123
+};
+export type BashExecParams = {
+  maskList?: MaskItem[];
+};
+export async function bashExec(inputCommand: string, params?: BashExecParams) {
+  let logInputCommand = inputCommand;
+  if (params && params.maskList && params.maskList.length > 0) {
+    for (const maskItem of params.maskList) {
+      if (maskItem.str.length > 0 && maskItem.val.length > 0) {
+        const replaceStr = maskItem.str.replace(maskItem.val, '*****');
+        logInputCommand = logInputCommand.replace(maskItem.str, replaceStr);
+      }
+    }
+  }
+
   try {
     logInfo('bashExec.INIT', {
-      inputCommand,
+      inputCommand: logInputCommand,
     });
     const result = spawnSync('bash', {
       encoding: 'utf-8',
@@ -16,24 +33,16 @@ export async function bashExec(inputCommand: string) {
     result.stdout = result.stdout.replace(/^\s+|\s+$/g, '');
     result.stderr = result.stderr.replace(/^\s+|\s+$/g, '');
 
-    // Обрезать result = [0...20, last-20...last]
-    const stdoutLen = result.stdout.length;
-    // let stdoutLog = '';
-    // if (stdoutLen > 80) {
-    //   stdoutLog = `${result.stdout.slice(0, 20)}...${result.stdout.slice(stdoutLen - 21, stdoutLen)}}`;
-    // } else if (stdoutLen > 40) {
-    //   stdoutLog = `${result.stdout.slice(0, 10)}...${result.stdout.slice(stdoutLen - 11, stdoutLen)}}`;
-    // } else if (stdoutLen > 20) {
-    //   stdoutLog = `${result.stdout.slice(0, 5)}...${result.stdout.slice(stdoutLen - 5, stdoutLen)}}`;
-    // } else if (stdoutLen > 10) {
-    //   stdoutLog = `${result.stdout.slice(0, 3)}...${result.stdout.slice(stdoutLen - 3, stdoutLen)}}`;
-    // } else {
-    //   stdoutLog = result.stdout;
-    // }
+    let stdoutLog = result.stdout;
+    // Удаление свойства Env
+    stdoutLog = stdoutLog.replace(/"Env"\s*:\s*\[[^\]]*\],?\s*/g, '');
+    // Удаление свойства Labels
+    stdoutLog = stdoutLog.replace(/"Labels"\s*:\s*\{[^}]*\},?\s*/g, '');
+
     const resultLog = {
       pid: result.pid,
       // output: Array<T | null>;
-      stdout: result.stdout,
+      stdout: stdoutLog,
       stderr: result.stderr,
       status: result.status,
       signal: result.signal,
@@ -41,13 +50,13 @@ export async function bashExec(inputCommand: string) {
     };
 
     logInfo('bashExec.RESULT', {
-      inputCommand,
+      inputCommand: logInputCommand,
       result: resultLog,
     });
 
     if (typeof result.signal === 'number' && result.signal !== 0) {
       throwErrorSimple('bashExec.PRE_ERR', {
-        inputCommand,
+        inputCommand: logInputCommand,
         result: resultLog,
       });
     }
@@ -55,7 +64,7 @@ export async function bashExec(inputCommand: string) {
     return result;
   } catch (err) {
     logError('bashExec.ERR', err, {
-      inputCommand,
+      inputCommand: logInputCommand,
     });
     throw err;
   }

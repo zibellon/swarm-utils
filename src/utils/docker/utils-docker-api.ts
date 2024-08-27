@@ -1,4 +1,4 @@
-import { bashExec } from '../utils-bash';
+import { bashExec, MaskItem } from '../utils-bash';
 
 //---------
 //docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
@@ -13,7 +13,19 @@ export function dockerApiLoginCmd(params: DockerApiLoginParams) {
 }
 export async function dockerApiLogin(params: DockerApiLoginParams) {
   const cmd = dockerApiLoginCmd(params);
-  return await bashExec(cmd);
+  const maskList: MaskItem[] = [
+    {
+      str: `-u ${params.user}`,
+      val: params.user,
+    },
+    {
+      str: `-p ${params.password}`,
+      val: params.password,
+    },
+  ];
+  return await bashExec(cmd, {
+    maskList,
+  });
 }
 
 //---------
@@ -229,6 +241,7 @@ export type DockerApiServiceCreateParams = {
   image: string; // docker:25.0.5-cli-alpine3.20
   execShell?: string;
   execCommand?: string;
+  maskList?: MaskItem[];
 };
 export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {
   let cmd = `docker service create`;
@@ -274,7 +287,9 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
 }
 export async function dockerApiServiceCreate(params: DockerApiServiceCreateParams) {
   const cmd = dockerApiServiceCreateCmd(params);
-  return await bashExec(cmd);
+  return await bashExec(cmd, {
+    maskList: params.maskList,
+  });
 }
 
 //---------
