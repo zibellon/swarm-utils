@@ -1,9 +1,9 @@
-import { authGetS3Params, AuthGetS3ParamsRes } from '../utils-auth';
-import { MaskItem } from '../utils-bash';
+import { authGetS3Params, AuthGetS3ParamsRes, authMaskS3Params } from '../utils-auth';
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
+import { MaskItem } from '../utils-mask';
 import {
   nameBackupServiceExec,
   nameBackupServiceScaleDown,
@@ -252,6 +252,7 @@ async function dockerBackupServiceItem(
         ...logData,
         nodeId,
         volumeList: [...volumeSet],
+        s3Params: authMaskS3Params(s3Params),
       };
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
@@ -400,6 +401,7 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
     serviceItem: params.serviceItem,
     nodeId: params.nodeId,
     volumeList: params.volumeList,
+    s3Params: authMaskS3Params(params.s3Params),
   };
   logInfo('dockerBackupServiceUploadVolumeList.INIT', logData);
 

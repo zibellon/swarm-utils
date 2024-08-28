@@ -1,11 +1,24 @@
 import { getProcessEnv } from './utils-env-config';
+import { MaskItem, maskObj } from './utils-mask';
 
 export function authIsTokenAdmin(token: string) {
   return getProcessEnv().SWARM_UTILS_ADMIN_TOKEN_LIST.split(',').indexOf(token) !== -1;
 }
 
+//---------
+// REGISTRY
+//---------
+
+export type AuthGetRegistryParamsRes = {
+  url: string;
+  user: string;
+  password: string;
+};
 // labelsPrefix = swarm-utils.update
-export function authGetRegistryAuthParams(labelsObj: Record<string, string>, labelsPrefix: string) {
+export function authGetRegistryParams(
+  labelsObj: Record<string, string>,
+  labelsPrefix: string
+): AuthGetRegistryParamsRes | null {
   const registryUserLabelObj = Object.entries(labelsObj).find((el) => {
     return el[0] === `${labelsPrefix}.registry.user` && el[1].length > 0;
   });
@@ -26,11 +39,29 @@ export function authGetRegistryAuthParams(labelsObj: Record<string, string>, lab
     return null;
   }
   return {
-    registryUrl: registryUrl,
+    url: registryUrl,
     user: registryUser,
     password: registryPassword,
   };
 }
+
+export function authMaskRegistryParams(params: AuthGetRegistryParamsRes) {
+  const s3ParamsMask: MaskItem[] = [
+    {
+      str: `"url":"${params.url}"`,
+      val: params.url,
+    },
+    {
+      str: `"password":"${params.password}"`,
+      val: params.password,
+    },
+  ];
+  return maskObj(params, s3ParamsMask);
+}
+
+//---------
+// S3
+//---------
 
 export type AuthGetS3ParamsRes = {
   url: string;
@@ -81,4 +112,22 @@ export function authGetS3Params(labelsObj: Record<string, string>, labelsPrefix:
     bucket: s3Bucket,
     retentionDays: s3RetentionDays,
   };
+}
+
+export function authMaskS3Params(params: AuthGetS3ParamsRes) {
+  const s3ParamsMask: MaskItem[] = [
+    {
+      str: `"url":"${params.url}"`,
+      val: params.url,
+    },
+    {
+      str: `"accessKey":"${params.accessKey}"`,
+      val: params.accessKey,
+    },
+    {
+      str: `"secretKey":"${params.secretKey}"`,
+      val: params.secretKey,
+    },
+  ];
+  return maskObj(params, s3ParamsMask);
 }

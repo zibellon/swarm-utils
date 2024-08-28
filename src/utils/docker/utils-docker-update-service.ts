@@ -1,4 +1,4 @@
-import { authGetRegistryAuthParams } from '../utils-auth';
+import { authGetRegistryParams } from '../utils-auth';
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutUpdateService, lockResource } from '../utils-lock';
@@ -100,7 +100,7 @@ async function dockerUpdateServiceItem(
   if (registryAuthLabelObj && registryAuthLabelObj[1] === 'true') {
     registryAuth = true;
 
-    const registryAuthParams = authGetRegistryAuthParams(inspectServiceInfo.Spec.Labels, 'swarm-utils.update');
+    const registryAuthParams = authGetRegistryParams(inspectServiceInfo.Spec.Labels, 'swarm-utils.update');
     if (registryAuthParams === null) {
       throwErrorSimple('dockerUpdateServiceItem.registryAuth.NULL', logData);
     }

@@ -1,4 +1,5 @@
-import { bashExec, BashExecParams, MaskItem } from '../utils-bash';
+import { bashExec, BashExecParams } from '../utils-bash';
+import { MaskItem } from '../utils-mask';
 
 const cleanLogRegexList: RegExp[] = [
   // Удаление свойства Env
@@ -19,17 +20,17 @@ async function dockerApiBashExec(cmd: string, params?: BashExecParams) {
 export type DockerApiLoginParams = {
   user: string;
   password: string;
-  registryUrl: string;
+  url: string;
 };
 export function dockerApiLoginCmd(params: DockerApiLoginParams) {
-  return `docker login -u ${params.user} -p ${params.password} ${params.registryUrl}`;
+  return `docker login -u ${params.user} -p ${params.password} ${params.url}`;
 }
 export async function dockerApiLogin(params: DockerApiLoginParams) {
   const cmd = dockerApiLoginCmd(params);
   const maskList: MaskItem[] = [
     {
-      str: `-u ${params.user}`,
-      val: params.user,
+      str: params.url,
+      val: params.url,
     },
     {
       str: `-p ${params.password}`,

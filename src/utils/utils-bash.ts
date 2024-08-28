@@ -1,24 +1,16 @@
 import { spawnSync } from 'child_process';
 import { throwErrorSimple } from './utils-error';
 import { logError, logInfo } from './utils-logger';
+import { MaskItem, maskString } from './utils-mask';
 
-export type MaskItem = {
-  str: string; // -e AWS_SECRET_KEY=asdqwe123
-  val: string; // asdqwe123
-};
 export type BashExecParams = {
   maskList?: MaskItem[];
   cleanLogRegexList?: RegExp[];
 };
 export async function bashExec(inputCommand: string, params?: BashExecParams) {
   let logInputCommand = inputCommand;
-  if (params && params.maskList && params.maskList.length > 0) {
-    for (const maskItem of params.maskList) {
-      if (maskItem.str.length > 0 && maskItem.val.length > 0) {
-        const replaceStr = maskItem.str.replace(maskItem.val, '*****');
-        logInputCommand = logInputCommand.replace(maskItem.str, replaceStr);
-      }
-    }
+  if (params && params.maskList) {
+    logInputCommand = maskString(logInputCommand, params.maskList);
   }
 
   try {
