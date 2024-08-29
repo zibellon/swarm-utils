@@ -1,7 +1,7 @@
 import { dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
 import { dockerUpdateServiceList } from 'src/utils/docker/utils-docker-update-service';
 import { authIsTokenAdmin } from 'src/utils/utils-auth';
-import { logWarn } from 'src/utils/utils-logger';
+import { throwErrorSimple } from 'src/utils/utils-error';
 
 type UpdateServiceExecParams = {
   token: string;
@@ -28,13 +28,12 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
       value: `swarm-utils.update.token=${params.token}`,
     });
   }
-
   const serviceList = await dockerApiServiceLs(filterList);
   if (serviceList.length === 0) {
-    logWarn('updateServiceExec.NOT_FOUND', {
+    throwErrorSimple('updateServiceExec.NOT_FOUND', {
       params,
+      filterList,
     });
-    return;
   }
   await dockerUpdateServiceList([serviceList[0]], {
     force: params.force,

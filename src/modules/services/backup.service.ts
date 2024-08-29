@@ -1,7 +1,7 @@
 import { dockerApiServiceLs, DockerApiServiceLsFilter } from 'src/utils/docker/utils-docker-api';
 import { dockerBackupServiceList } from 'src/utils/docker/utils-docker-backup-service';
 import { authIsTokenAdmin } from 'src/utils/utils-auth';
-import { logWarn } from 'src/utils/utils-logger';
+import { throwErrorSimple } from 'src/utils/utils-error';
 
 type BackupServiceExecParams = {
   token: string;
@@ -26,13 +26,12 @@ export async function backupServiceExec(params: BackupServiceExecParams) {
       value: `swarm-utils.backup.token=${params.token}`,
     });
   }
-
   const serviceList = await dockerApiServiceLs(filterList);
   if (serviceList.length === 0) {
-    logWarn('backupServiceExec.NOT_FOUND', {
+    throwErrorSimple('backupServiceExec.NOT_FOUND', {
       params,
+      filterList,
     });
-    return;
   }
   await dockerBackupServiceList([serviceList[0]]);
 }

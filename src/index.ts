@@ -3,6 +3,7 @@ import http from 'http';
 import { apiBackupRouter } from './modules/controllers/api-backup.controller';
 import { apiCleanRouter } from './modules/controllers/api-clean.controller';
 import { apiUpdateRouter } from './modules/controllers/api-update.controller';
+import { apiLogger } from './utils/utils-api-logger';
 import { getProcessEnv } from './utils/utils-env-config';
 import { logInfo } from './utils/utils-logger';
 
@@ -12,6 +13,8 @@ const expressApp = express();
 const httpServer = http.createServer(expressApp);
 
 expressApp.use(express.json());
+
+expressApp.use(apiLogger);
 
 expressApp.use(apiUpdateRouter);
 expressApp.use(apiBackupRouter);

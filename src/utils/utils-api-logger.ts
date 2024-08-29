@@ -3,11 +3,6 @@ import { nanoid } from 'nanoid';
 import { logInfo } from './utils-logger';
 
 export function apiLogger(req: Request, _: Response, next: NextFunction) {
-  if (req.url.includes('/swagger')) {
-    next();
-    return;
-  }
-
   const tmp = req as any;
 
   tmp.logData = {
@@ -28,7 +23,7 @@ export function apiLogger(req: Request, _: Response, next: NextFunction) {
     tmp.logData['reqHeaders'] = req.headers;
   }
 
-  logInfo('REQ logger', tmp.logData);
+  logInfo('REQ_LOG', tmp.logData);
 
   next();
 }
