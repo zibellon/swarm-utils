@@ -8,7 +8,7 @@ import {
   dockerApiServicePs,
   dockerApiServiceRemove,
 } from './utils-docker-api';
-import { dockerLogInspectTaskItem } from './utils-docker-logs';
+import { maskInspectTaskItem } from './utils-docker-mask';
 
 // Получение информации о сервисе
 // Запущен или нет
@@ -74,7 +74,7 @@ export async function dockerServiceCanRemove(serviceName: string) {
     }
     logInfo('dockerServiceCanRemove.taskItem.inspect.OK', {
       ...logData,
-      inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
+      inspectTaskInfo: maskInspectTaskItem(inspectTaskInfo),
     });
 
     // Сервис НЕЛЬЗЯ удалять в двух случаях

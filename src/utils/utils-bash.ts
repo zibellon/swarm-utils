@@ -1,16 +1,15 @@
 import { spawnSync } from 'child_process';
 import { throwErrorSimple } from './utils-error';
 import { logError, logInfo } from './utils-logger';
-import { MaskItem, maskString } from './utils-mask';
 
 export type BashExecParams = {
-  maskList?: MaskItem[];
-  cleanLogRegexList?: RegExp[];
+  inputCommand: string;
+  logInputCommand?: string;
 };
-export async function bashExec(inputCommand: string, params?: BashExecParams) {
-  let logInputCommand = inputCommand;
-  if (params && params.maskList) {
-    logInputCommand = maskString(logInputCommand, params.maskList);
+export async function bashExec(params: BashExecParams) {
+  let logInputCommand = params.inputCommand;
+  if (params && params.logInputCommand && params.logInputCommand.length > 0) {
+    logInputCommand = params.logInputCommand;
   }
 
   try {
@@ -19,22 +18,14 @@ export async function bashExec(inputCommand: string, params?: BashExecParams) {
     });
     const result = spawnSync('bash', {
       encoding: 'utf-8',
-      input: inputCommand,
+      input: params.inputCommand,
     });
 
     // remove \n from start and end of line
     result.stdout = result.stdout.replace(/^\s+|\s+$/g, '');
     result.stderr = result.stderr.replace(/^\s+|\s+$/g, '');
 
-    let stdoutLog = result.stdout;
-
-    // Чистка лога от лишних полей. Если указано
-    if (params && params.cleanLogRegexList && params.cleanLogRegexList.length > 0) {
-      for (const reg of params.cleanLogRegexList) {
-        // Удаление свойства Env
-        stdoutLog = stdoutLog.replace(reg, '');
-      }
-    }
+    let stdoutLog = `len=${result.stdout.length}`;
 
     const resultLog = {
       pid: result.pid,

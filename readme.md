@@ -309,13 +309,9 @@
 2. В момент update добавить labels
    1. .update.exec-pre
    2. .update.exec-post
-3. Добавить работу с sqlite
-   1. запись состояний
-   2. Какие команды запустились и ТД
-   3. На случай - падения сервиса
-4. Добавить node.labels.token
+3. Добавить node.labels.token
    1. Чтобы можно было по АПИ дергать Clean на Node
-5. Labels. Добавить возможность настрйоки timeout для каждого действия
+4. Labels. Добавить возможность настрйоки timeout для каждого действия
    1. Если label не указан - timeout из ENV (по умолчанию)
    2. Список labels (SERVICE)
       1. .backup.exec.timeout
@@ -327,7 +323,7 @@
       1. .clean.image.timeout
       2. .clean.builder.timeout
       3. .clean.container.timeout
-6. Использовать node-labels
+5. Использовать node-labels
    1. Сколько времени на каждую операцию - для очистки NODE
    2. Какие пользователи, имеют права доступа на очистку этой NODE
    3. Список labels
@@ -339,11 +335,11 @@
       6. clean.container.enable
       7. clean.container.timeout
       8. clean.token
-7.  API. Во все методы - добавить параметр waitRes=true/false
+6.  API. Во все методы - добавить параметр waitRes=true/false
     1.  Если ждать ответ не надо - запускать без await. И сразу отдать res: процесс запущен
-8.  Вопрос безопасности.
+7.  Вопрос безопасности.
     1.  Отдельная overlay сеть, --attach
-9.  Labels. Добавить labels для Node
+8.  Labels. Добавить labels для Node
     1.  swarm-utils.clean
         1.  enable=true/false
         2.  exec
@@ -353,12 +349,15 @@
         2.  exec
         3.  volume-list-upload=volume1,volume2,volume3,...
         4.  token
-10. Добавить ENV переменную для маскирования логов
+9.  Добавить ENV переменную для маскирования логов
     1.  Скрыкает полный вывод в команде bashExec. Добавляет звездочки
-11. Добавить API методы
+10. Добавить API методы
     1.  GET /service/status (info)
     2.  получение списка Service
     3.  получение писка Service по labels
     4.  Получение списка Nodes по Labels
-12. Уменьшить общее количество логов
+11. Уменьшить общее количество логов
     1.  Сейчас для CLEAN одного сервиса - тонна логов....
+12. Логи bashExec, логи вывода
+    1.  Там могут быть секретные данные - надо придумать, как их скрывать
+    2.  Передавать функцию в команду bashExec - для модификации ввода/вывода ?

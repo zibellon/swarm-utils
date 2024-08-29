@@ -13,7 +13,7 @@ import {
   DockerApiServiceLsItem,
   dockerApiServiceUpdateCmd,
 } from './utils-docker-api';
-import { dockerLogInspectServiceItem } from './utils-docker-logs';
+import { maskInspectServiceItem, maskRegistryParams } from './utils-docker-mask';
 
 type DockerUpdateServiceParams = {
   force: boolean;
@@ -54,7 +54,7 @@ export async function dockerUpdateServiceList(
       lockTimeoutObj,
       params,
       serviceItem,
-      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+      inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
     };
     logInfo('dockerUpdateServiceList.serviceItem.lock.INIT', logData);
     await lockResource
@@ -84,7 +84,7 @@ async function dockerUpdateServiceItem(
   const logData = {
     params,
     serviceItem,
-    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+    inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
   };
   logInfo('dockerUpdateServiceItem.INIT', logData);
 
@@ -100,11 +100,15 @@ async function dockerUpdateServiceItem(
   if (registryAuthLabelObj && registryAuthLabelObj[1] === 'true') {
     registryAuth = true;
 
-    const registryAuthParams = authGetRegistryParams(inspectServiceInfo.Spec.Labels, 'swarm-utils.update');
-    if (registryAuthParams === null) {
+    const registryParams = authGetRegistryParams(inspectServiceInfo.Spec.Labels, 'swarm-utils.update');
+    if (registryParams === null) {
       throwErrorSimple('dockerUpdateServiceItem.registryAuth.NULL', logData);
     }
-    await dockerApiLogin(registryAuthParams);
+    logInfo('dockerUpdateServiceItem.registryAuth.INIT', {
+      ...logData,
+      registryParams: maskRegistryParams(registryParams),
+    });
+    await dockerApiLogin(registryParams);
   }
 
   // Генерация команды для обновления сервиса

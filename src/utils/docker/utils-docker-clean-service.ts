@@ -16,7 +16,7 @@ import {
   dockerApiServicePs,
   DockerApiServicePsItem,
 } from './utils-docker-api';
-import { dockerLogInspectServiceItem, dockerLogInspectTaskItem } from './utils-docker-logs';
+import { maskInspectServiceItem, maskInspectTaskItem } from './utils-docker-mask';
 
 export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
@@ -68,7 +68,7 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       lockKey,
       lockTimeoutObj,
       serviceItem,
-      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+      inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
       taskList,
     };
     logInfo('dockerCleanServiceList.serviceItem.lock.INIT', logData);
@@ -98,7 +98,7 @@ async function dockerCleanServiceItem(
 ) {
   const logData = {
     serviceItem,
-    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+    inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
   };
   logInfo('dockerCleanServiceItem.INIT', logData);
 
@@ -178,7 +178,7 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
 
   logInfo('dockerCleanServiceItemExecOnTask.TASK_INSPECT', {
     ...logData,
-    inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
+    inspectTaskInfo: maskInspectTaskItem(inspectTaskInfo),
     containerId,
     nodeId,
   });

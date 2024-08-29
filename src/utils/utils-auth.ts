@@ -1,5 +1,4 @@
 import { getProcessEnv } from './utils-env-config';
-import { MaskItem, maskObj } from './utils-mask';
 
 export function authIsTokenAdmin(token: string) {
   return getProcessEnv().SWARM_UTILS_ADMIN_TOKEN_LIST.split(',').indexOf(token) !== -1;
@@ -43,20 +42,6 @@ export function authGetRegistryParams(
     user: registryUser,
     password: registryPassword,
   };
-}
-
-export function authMaskRegistryParams(params: AuthGetRegistryParamsRes) {
-  const s3ParamsMask: MaskItem[] = [
-    {
-      str: `"url":"${params.url}"`,
-      val: params.url,
-    },
-    {
-      str: `"password":"${params.password}"`,
-      val: params.password,
-    },
-  ];
-  return maskObj(params, s3ParamsMask);
 }
 
 //---------
@@ -112,22 +97,4 @@ export function authGetS3Params(labelsObj: Record<string, string>, labelsPrefix:
     bucket: s3Bucket,
     retentionDays: s3RetentionDays,
   };
-}
-
-export function authMaskS3Params(params: AuthGetS3ParamsRes) {
-  const s3ParamsMask: MaskItem[] = [
-    {
-      str: `"url":"${params.url}"`,
-      val: params.url,
-    },
-    {
-      str: `"accessKey":"${params.accessKey}"`,
-      val: params.accessKey,
-    },
-    {
-      str: `"secretKey":"${params.secretKey}"`,
-      val: params.secretKey,
-    },
-  ];
-  return maskObj(params, s3ParamsMask);
 }

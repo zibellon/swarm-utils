@@ -1,16 +1,27 @@
-import { bashExec, BashExecParams } from '../utils-bash';
-import { MaskItem } from '../utils-mask';
+import { bashExec } from '../utils-bash';
+import { MaskItem, maskString } from '../utils-mask';
 
-const cleanLogRegexList: RegExp[] = [
-  // Удаление свойства Env
-  /"Env"\s*:\s*\[[^\]]*\],?\s*/g,
-  // Удаление свойства Labels
-  /"Labels"\s*:\s*\{[^}]*\},?\s*/g,
-];
-async function dockerApiBashExec(cmd: string, params?: BashExecParams) {
-  return await bashExec(cmd, {
-    cleanLogRegexList: cleanLogRegexList,
-    ...params,
+// const cleanLogRegexList: RegExp[] = [
+//   // Удаление свойства Env
+//   /"Env"\s*:\s*\[[^\]]*\],?\s*/g,
+//   // Удаление свойства Labels
+//   /"Labels"\s*:\s*\{[^}]*\},?\s*/g,
+// ];
+type DockerApiBashExecParams = {
+  cmd: string;
+  maskList?: MaskItem[];
+};
+async function dockerApiBashExec(params: DockerApiBashExecParams) {
+  let logInputCommand = params.cmd;
+  if (params.maskList && params.maskList.length > 0) {
+    logInputCommand = maskString({
+      sourceStr: params.cmd,
+      maskList: params.maskList,
+    });
+  }
+  return await bashExec({
+    inputCommand: params.cmd,
+    logInputCommand: logInputCommand,
   });
 }
 
@@ -37,8 +48,9 @@ export async function dockerApiLogin(params: DockerApiLoginParams) {
       val: params.password,
     },
   ];
-  return await dockerApiBashExec(cmd, {
-    maskList: maskList,
+  return await dockerApiBashExec({
+    cmd,
+    maskList,
   });
 }
 
@@ -68,7 +80,9 @@ export function dockerApiNodeLsCmd(filterList: DockerApiNodeLsFilter[] = []) {
 }
 export async function dockerApiNodeLs(filterList: DockerApiNodeLsFilter[] = []) {
   const cmd = dockerApiNodeLsCmd(filterList);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -103,7 +117,9 @@ export function dockerApiVolumeLsCmd(filterList: DockerApiVolumeLsFilter[] = [])
 }
 export async function dockerApiVolumeLs(filterList: DockerApiVolumeLsFilter[] = []) {
   const cmd = dockerApiVolumeLsCmd(filterList);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -134,7 +150,9 @@ export function dockerApiServiceLsCmd(filterList: DockerApiServiceLsFilter[] = [
 }
 export async function dockerApiServiceLs(filterList: DockerApiServiceLsFilter[] = []) {
   const cmd = dockerApiServiceLsCmd(filterList);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -168,7 +186,9 @@ export function dockerApiServicePsCmd(serviceName: string, filterList: DockerApi
 }
 export async function dockerApiServicePs(serviceName: string, filterList: DockerApiServicePsFilter[] = []) {
   const cmd = dockerApiServicePsCmd(serviceName, filterList);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -199,7 +219,9 @@ export function dockerApiServiceUpdateCmd(serviceName: string, params: DockerApi
 }
 export async function dockerApiServiceUpdate(serviceName: string, params: DockerApiServiceUpdateParams = {}) {
   const cmd = dockerApiServiceUpdateCmd(serviceName, params);
-  return await dockerApiBashExec(cmd);
+  return await dockerApiBashExec({
+    cmd,
+  });
 }
 
 //---------
@@ -210,7 +232,9 @@ export function dockerApiServiceScaleCmd(serviceName: string, replicas: number) 
 }
 export async function dockerApiServiceScale(serviceName: string, replicas: number) {
   const cmd = dockerApiServiceScaleCmd(serviceName, replicas);
-  return await dockerApiBashExec(cmd);
+  return await dockerApiBashExec({
+    cmd,
+  });
 }
 
 //---------
@@ -221,7 +245,9 @@ export function dockerApiServiceRemoveCmd(serviceName: string) {
 }
 export async function dockerApiServiceRemove(serviceName: string) {
   const cmd = dockerApiServiceRemoveCmd(serviceName);
-  return await dockerApiBashExec(cmd);
+  return await dockerApiBashExec({
+    cmd,
+  });
 }
 
 //---------
@@ -232,7 +258,9 @@ export function dockerApiServiceLogsCmd(serviceIdOrTaskId: string) {
 }
 export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
   const cmd = dockerApiServiceLogsCmd(serviceIdOrTaskId);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   return result.stdout
     .split('\n')
     .filter((el) => el.length > 0)
@@ -301,7 +329,8 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
 }
 export async function dockerApiServiceCreate(params: DockerApiServiceCreateParams) {
   const cmd = dockerApiServiceCreateCmd(params);
-  return await dockerApiBashExec(cmd, {
+  return await dockerApiBashExec({
+    cmd,
     maskList: params.maskList,
   });
 }
@@ -358,7 +387,9 @@ export function dockerApiInspectServiceCmd(serviceId: string) {
 }
 export async function dockerApiInspectService(serviceId: string) {
   const cmd = dockerApiInspectServiceCmd(serviceId);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   const resultList = JSON.parse(result.stdout) as DockerApiInspectServiceItem[];
   return resultList.length > 0 ? resultList[0] : null;
 }
@@ -407,7 +438,9 @@ export function dockerApiInspectTaskCmd(taskId: string) {
 }
 export async function dockerApiInspectTask(taskId: string) {
   const cmd = dockerApiInspectTaskCmd(taskId);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   const resultList = JSON.parse(result.stdout) as DockerApiInspectTaskItem[];
   return resultList.length > 0 ? resultList[0] : null;
 }
@@ -464,7 +497,9 @@ export function dockerApiInspectNodeCmd(nodeId: string) {
 }
 export async function dockerApiInspectNode(nodeId: string) {
   const cmd = dockerApiInspectTaskCmd(nodeId);
-  const result = await dockerApiBashExec(cmd);
+  const result = await dockerApiBashExec({
+    cmd,
+  });
   const resultList = JSON.parse(result.stdout) as DockerApiInspectNodeItem[];
   return resultList.length > 0 ? resultList[0] : null;
 }

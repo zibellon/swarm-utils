@@ -1,4 +1,4 @@
-import { authGetS3Params, AuthGetS3ParamsRes, authMaskS3Params } from '../utils-auth';
+import { authGetS3Params, AuthGetS3ParamsRes } from '../utils-auth';
 import { getProcessEnv } from '../utils-env-config';
 import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
@@ -27,7 +27,7 @@ import {
   DockerApiServicePsItem,
   dockerApiServiceScaleCmd,
 } from './utils-docker-api';
-import { dockerLogInspectServiceItem, dockerLogInspectTaskItem } from './utils-docker-logs';
+import { maskInspectServiceItem, maskInspectTaskItem, maskS3Params } from './utils-docker-mask';
 
 export async function dockerBackupServiceList(serviceList: DockerApiServiceLsItem[]) {
   for (const serviceItem of serviceList) {
@@ -82,7 +82,7 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
       lockKey,
       lockTimeoutObj,
       serviceItem,
-      inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+      inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
       taskList,
     };
     logInfo('dockerBackupServiceList.serviceItem.lock.INIT', logData);
@@ -112,7 +112,7 @@ async function dockerBackupServiceItem(
 ) {
   const logData = {
     serviceItem,
-    inspectServiceInfo: dockerLogInspectServiceItem(inspectServiceInfo),
+    inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
   };
   logInfo('dockerBackupServiceItem.INIT', logData);
 
@@ -252,7 +252,7 @@ async function dockerBackupServiceItem(
         ...logData,
         nodeId,
         volumeList: [...volumeSet],
-        s3Params: authMaskS3Params(s3Params),
+        s3Params: maskS3Params(s3Params),
       };
       try {
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
@@ -319,7 +319,7 @@ async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
 
   logInfo('dockerBackupServiceExec.TASK_INSPECT', {
     ...logData,
-    inspectTaskInfo: dockerLogInspectTaskItem(inspectTaskInfo),
+    inspectTaskInfo: maskInspectTaskItem(inspectTaskInfo),
     containerId,
     nodeId,
   });
@@ -401,7 +401,7 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
     serviceItem: params.serviceItem,
     nodeId: params.nodeId,
     volumeList: params.volumeList,
-    s3Params: authMaskS3Params(params.s3Params),
+    s3Params: maskS3Params(params.s3Params),
   };
   logInfo('dockerBackupServiceUploadVolumeList.INIT', logData);
 
