@@ -7,7 +7,6 @@ export async function cronCleanServiceList(dateCron: Date) {
     dateCron,
   });
 
-  // Очистка Service
   const serviceList = await dockerApiServiceLs([
     {
       key: 'label',
