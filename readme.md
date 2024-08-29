@@ -6,13 +6,22 @@
    1. Удалить все EXITED/STOPPED/COMPLETED containers: docker container prune -f
    2. Удаление ненужных images: docker image prune -f -a
    3. Очистка кэша билдера: docker builder prune -f
-   4. Запуск: CRON
+   4. ВАЖНО
+      1. На данный момент не реализован механизм Labels у Node
+      2. Все Node в кластере - будут очищаться
+   5. Параметры API запроса
+      1. token - обязательный параметр
+      2. nodeName - обязательный параметр (super-worker-1)
+   6. Запуск: CRON / API
 2. backup-service
    1. Резервное копирование
    2. Работает только на service
    3. Загрузка копий на S3 хранилище (Через [offen-backup](https://github.com/offen/docker-volume-backup))
       1. Creds для S3 - общие на весь кластер. Указываеются через ENV переменные `swarm-utils`
-   4. Запуск: CRON / API
+   4. Параметры API запроса
+      1. token - обязательный параметр
+      2. serviceName - обязательный параметр (stack-name_service-name)
+   5. Запуск: CRON / API
 3. clean-service
    1. Очистка одного или нескольких сервисов. (Например - registry, smtp cache)
    2. Параметры API запроса
@@ -25,7 +34,7 @@
    3. Параметры API запроса
       1. token - обязательный параметр
       2. serviceName - обязательный параметр (stack-name_service-name)
-      3. image - обязательный параметр. Полное название image. image-name:tag
+      3. image - обязательный параметр. Полное название. `image-name:tag`
       4. isForce - необязательный параметр. Обновляем FORCE или нет
          1. Если force === true -> task, будет пересоздана. Даже если image - не изменился
    4. Запуск: API
