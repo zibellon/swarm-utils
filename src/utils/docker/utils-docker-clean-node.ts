@@ -9,7 +9,7 @@ import {
   DockerApiNodeLsItem,
   dockerApiServiceCreate,
 } from './utils-docker-api';
-import { dockerLogInspectNodeItem } from './utils-docker-logs';
+import { maskInspectNodeItem } from './utils-docker-mask';
 
 export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
   for (const nodeItem of nodeList) {
@@ -58,7 +58,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       lockKey,
       lockTimeoutObj,
       nodeItem,
-      nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
+      nodeInspectInfo: maskInspectNodeItem(nodeInspectInfo),
     };
     logInfo('dockerCleanNodeList.nodeItem.lock.INIT', logData);
     await lockResource
@@ -83,7 +83,7 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
 async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInfo: DockerApiInspectNodeItem) {
   const logData = {
     nodeItem,
-    nodeInspectInfo: dockerLogInspectNodeItem(nodeInspectInfo),
+    nodeInspectInfo: maskInspectNodeItem(nodeInspectInfo),
   };
   logInfo('dockerCleanNodeItem.INIT', logData);
 
