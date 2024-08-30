@@ -5,7 +5,7 @@ class ProcessENV {
   public SWARM_UTILS_IS_CRON_BACKUP_SERVICE = true; // Делать бэкап по кроне - бэкап сервисов
   public SWARM_UTILS_IS_CRON_CLEAN_SERVICE = true; // Производить чистку кластера по кроне (SERVICES)
   public SWARM_UTILS_IS_CRON_CLEAN_NODE = true; // Производить чистку кластера по кроне (NODES)
-  public SWARM_UTILS_CRON_EXPR = '* * * * *'; // Интервал работы кроны (Cron string)
+  public SWARM_UTILS_CRON_EXPR = '0 0 3 * * *'; // Интервал работы кроны (Cron string)
   public SWARM_UTILS_ADMIN_TOKEN_LIST = ''; // Список из токенов, которае имею админ-права. =tokenA,tokenB,tokenC
   public SWARM_UTILS_DOCKER_CLI_IMAGE_NAME = 'docker:25.0.5-cli-alpine3.20'; // Название docker-cli image, который будет запускаться на каждой NODE
 
@@ -14,21 +14,21 @@ class ProcessENV {
   public SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL = '/bin/sh'; // Указание shell - для EXEC комманды в момент CLEAN_SERVICE
 
   // BACKUP_SERVICE_TIMEOUT
-  public SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = 60_000; // 60 секунд - сколько времени на EXEC команду в момент BACKUP_SERVICE
+  public SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT = 600_000; // 600 секунд - сколько времени на EXEC команду в момент BACKUP_SERVICE
   public SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT = 30_000; // 30 секунд - сколько времени на STOP команду в момент BACKUP_SERVICE
-  public SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT = 60_000; // 60 секунд - сколько времени на UPLOAD команду в момент BACKUP_SERVICE
-  public SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT = 60_000; // 60 секунд - сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
+  public SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT = 600_000; // 600 секунд - сколько времени на UPLOAD команду в момент BACKUP_SERVICE
+  public SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT = 300_000; // 300 секунд - сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP
 
   // CLEAN_SERVICE_TIMEOUT
-  public SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = 30_000; // 30 секунд - сколько времени на EXEC команду в момент CLEAN_SERVICE
+  public SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT = 60_000; // 60 секунд - сколько времени на EXEC команду в момент CLEAN_SERVICE
 
   // UPDATE_SERVICE_TIMEOUT
-  public SWARM_UTILS_UPDATE_SERVICE_TIMEOUT = 30_000; // 30 секунд - сколько времени на UPDATE_SERVICE
+  public SWARM_UTILS_UPDATE_SERVICE_TIMEOUT = 60_000; // 60 секунд - сколько времени на UPDATE_SERVICE
 
   // CLEAN_SERVICE_TIMEOUT
-  public SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT = 30_000; // 30 секунд - сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
-  public SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT = 30_000; // 30 секунд - сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
-  public SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = 30_000; // 30 секунд - сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
+  public SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT = 60_000; // 60 секунд - сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE
+  public SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT = 60_000; // 60 секунд - сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE
+  public SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT = 60_000; // 60 секунд - сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE
 
   // Timeouts - общие
   public SWARM_UTILS_PENDING_SERVICE_TIMEOUT = 20_000; // 20 секунд - сколько времени на запуск сервиса
@@ -44,9 +44,9 @@ class ProcessENV {
   public SWARM_UTILS_S3_RETENTION_DAYS = 5; // Сколько времени живет бэкап в S3
 
   // REGISTRY
-  public SWARM_UTILS_REGISTRY_USER = ''; // Имя пользователя, для доступа к регистри
-  public SWARM_UTILS_REGISTRY_PASSWORD = ''; // password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-  public SWARM_UTILS_REGISTRY_URL = ''; // url регистри. Обязательно используется HTTPS. domain.com
+  public SWARM_UTILS_REGISTRY_USER = '...'; // Имя пользователя, для доступа к регистри
+  public SWARM_UTILS_REGISTRY_PASSWORD = '...'; // password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
+  public SWARM_UTILS_REGISTRY_URL = 'registry.domain.com'; // url регистри. Обязательно используется HTTPS. domain.com
 }
 
 let processENV: ProcessENV | null = null;

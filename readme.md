@@ -82,65 +82,38 @@
 6. Он знает токен от проекта a -> модифицирует CI/CD проекта b и указывает токен от проекта a
 7. Запускает вредоносный image (Что следует из первой уязвимости)
 
-# ENV_LIST
-2. SWARM_UTILS_IS_CRON_BACKUP_SERVICE=true
-   1. Делать бэкап по кроне - бэкап сервисов
-3. SWARM_UTILS_IS_CRON_CLEAN_SERVICE=true
-   1. Производить чистку кластера по кроне (SERVICES)
-4. SWARM_UTILS_IS_CRON_CLEAN_NODE=true
-   1. Производить чистку кластера по кроне (NODES)
-5. SWARM_UTILS_CRON_EXPR=* * * * *
-   1. Интервал работы кроны (Cron string)
-6. SWARM_UTILS_ADMIN_TOKEN_LIST=tokenA,tokenB,tokenC,
-   1. Список из токенов, которае имею админ-права
-7. SWARM_UTILS_DOCKER_CLI_IMAGE_NAME=docker:25.0.5-cli-alpine3.20
-   1. Название docker-cli image, который будет запускаться на каждой `NODE`
-8. SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL=/bin/sh
-   1. Указание shell - для EXEC комманды в момент BACKUP_SERVICE. Передается в `docker exec ... SHELL -c`
-9.  SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL=/bin/sh
-    1.  Указание shell - для EXEC комманды в момент CLEAN_SERVICE. Передается в `docker exec ... SHELL -c`
-10. SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT=600000
-   1. Сколько времени на EXEC команду в момент BACKUP_SERVICE. Значение в MS
-11. SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT=60000
-   1. Сколько времени на STOP команду в момент BACKUP_SERVICE. Значение в MS
-12. SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT=600000
-    1.  Сколько времени на UPLOAD команду в момент BACKUP_SERVICE. Значение в MS
-13. SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT=600000
-    1.  Сколько времени на START команду в момент BACKUP_SERVICE. Только в том случае если был STOP. Значение в MS
-14. SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT=60000
-    1.  Сколько времени на EXEC команду в момент CLEAN_SERVICE. Значение в MS
-15. SWARM_UTILS_UPDATE_SERVICE_TIMEOUT=300000
-    1.  Сколько времени на UPDATE_SERVICE. Значение в MS
-16. SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT=120000
-    1.  Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE. Значение в MS
-17. SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT=120000
-    1.  Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE. Значение в MS
-18. SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT=120000
-    1.  Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE. Значение в MS
-19. SWARM_UTILS_PENDING_SERVICE_TIMEOUT=20000
-    1.  Сколько времени на запуск сервиса. Значение в MS
-20. SWARM_UTILS_LOCK_TIMEOUT=10000
-   1. 10 секунд - сколько времени на уствновку блокировки. Значение в MS
-21. SWARM_UTILS_EXTRA_TIMEOUT=10000
-    1.  Дополнительное время для блокировки. Задержки сети и ТД. Значение в MS
-22. SWARM_UTILS_S3_URL=s3-api.domain.com
-    1.  Доменное имя где находится облако S3
-23. SWARM_UTILS_S3_HTTPS=true
-    1.  Использовать HTTPS или нет. Если нет - подключение будет идти через http://
-24. SWARM_UTILS_S3_ACCESS_KEY=...
-    1.  Ключ для доступа к S3
-25. SWARM_UTILS_S3_SECRET_KEY=...
-    1.  Секрет для доступа к S3
-26. SWARM_UTILS_S3_BUCKET=my-bucket-name
-    1.  Название bucket - куда заливать бэкап
-27. SWARM_UTILS_S3_RETENTION_DAYS=5
-    1.  Сколько времени живет каждый бэкап в S3
-28. SWARM_UTILS_REGISTRY_USER=root
-    1.  Имя пользователя, для доступа к регистри
-29. SWARM_UTILS_REGISTRY_PASSWORD=...
-    1.  password от регистри. Если это GitLab - можно использовать токен с парвами на чтение/запись в регистри
-30. SWARM_UTILS_REGISTRY_URL=domain.com
-    1.  url регистри. Обязательно используется HTTPS
+# ENV
+| ENV                                                   | Default                      | Описание                                                                        |
+| ----------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| SWARM_UTILS_IS_CRON_BACKUP_SERVICE                    | true                         | Делать бэкап по кроне - бэкап сервисов                                          |
+| SWARM_UTILS_IS_CRON_CLEAN_SERVICE                     | true                         | Производить чистку кластера по кроне (SERVICES)                                 |
+| SWARM_UTILS_IS_CRON_CLEAN_NODE                        | true                         | Производить чистку кластера по кроне (NODES)                                    |
+| SWARM_UTILS_CRON_EXPR                                 | 0 0 3 * * *                  | Интервал работы крон (Cron string). [Пакет](https://www.npmjs.com/package/cron) |
+| SWARM_UTILS_ADMIN_TOKEN_LIST                          | -                            | Список из токенов, которае имеют админ права. Пример: tokenA,tokenB,tokenC      |
+| SWARM_UTILS_DOCKER_CLI_IMAGE_NAME                     | docker:25.0.5-cli-alpine3.20 | Название docker-cli image, который будет запускаться на каждой `NODE`           |
+| SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL                 | /bin/sh                      | shell - для EXEC комманды в момент BACKUP_SERVICE. `docker exec ... SHELL -c`   |
+| SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL                  | /bin/sh                      | shell - для EXEC комманды в момент CLEAN_SERVICE. `docker exec ... SHELL -c`    |
+| SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT               | 600_000                      | Сколько времени на EXEC команду в момент BACKUP_SERVICE. Значение в MS          |
+| SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT               | 30_000                       | Сколько времени на STOP команду в момент BACKUP_SERVICE. Значение в MS          |
+| SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT | 600_000                      | Сколько времени на UPLOAD команду в момент BACKUP_SERVICE. Значение в MS        |
+| SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT              | 300_000                      | Сколько времени на START команду в момент BACKUP_SERVICE. Значение в MS         |
+| SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT                | 60_000                       | Сколько времени на EXEC команду в момент CLEAN_SERVICE. Значение в MS           |
+| SWARM_UTILS_UPDATE_SERVICE_TIMEOUT                    | 60_000                       | Сколько времени на UPDATE_SERVICE. Значение в MS                                |
+| SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT                  | 60_000                       | Сколько времени на IMAGE PRUNE команду в момент CLEAN_NODE. Значение в MS       |
+| SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT                | 60_000                       | Сколько времени на BUILDER PRUNE команду в момент CLEAN_NODE. Значение в MS     |
+| SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT              | 60_000                       | Сколько времени на CONTAINER PRUNE команду в момент CLEAN_NODE. Значение в MS   |
+| SWARM_UTILS_PENDING_SERVICE_TIMEOUT                   | 20_000                       | Сколько времени на запуск сервиса. Значение в MS                                |
+| SWARM_UTILS_LOCK_TIMEOUT                              | 10_000                       | 10 секунд - сколько времени на уствновку блокировки. Значение в MS              |
+| SWARM_UTILS_EXTRA_TIMEOUT                             | 10_000                       | Дополнительное время для блокировки. Задержки сети и ТД. Значение в MS          |
+| SWARM_UTILS_S3_URL                                    | s3-api.domain.com            | Доменное имя где находится облако S3                                            |
+| SWARM_UTILS_S3_HTTPS                                  | true                         | Использовать HTTPS или нет. Если нет - подключение будет идти через http://     |
+| SWARM_UTILS_S3_BUCKET                                 | my-bucket-name               | Название bucket - куда заливать бэкап                                           |
+| SWARM_UTILS_S3_ACCESS_KEY                             | ...                          | Ключ для доступа к S3                                                           |
+| SWARM_UTILS_S3_SECRET_KEY                             | ...                          | Секрет для доступа к S3                                                         |
+| SWARM_UTILS_S3_RETENTION_DAYS                         | 5                            | Сколько времени живет каждый бэкап в S3                                         |
+| SWARM_UTILS_REGISTRY_USER                             | ...                          | Имя пользователя, для доступа к docker registry                                 |
+| SWARM_UTILS_REGISTRY_PASSWORD                         | ...                          | password/token от registry. token - справами на чтение/запись в registry        |
+| SWARM_UTILS_REGISTRY_URL                              | registry.domain.com          | url регистри. Обязательно используется HTTPS                                    |
 
 # Список LABELS
 ## Для SERVICE
