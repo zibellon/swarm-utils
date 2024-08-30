@@ -34,23 +34,18 @@ export function lockGetTimeoutCleanNode(params?: LockGetTimeoutCleanNodeParams) 
   let containerTimeout = 0;
 
   if (params) {
-    if (typeof params.imageTimeout === 'number') {
-      imageTimeout = params.imageTimeout;
+    if (typeof params.imageTimeout === 'number' && params.imageTimeout > 0) {
+      imageTimeout = params.imageTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
     }
-    if (typeof params.builderTimeout === 'number') {
-      builderTimeout = params.builderTimeout;
+    if (typeof params.builderTimeout === 'number' && params.builderTimeout > 0) {
+      builderTimeout = params.builderTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
     }
-    if (typeof params.containerTimeout === 'number') {
-      containerTimeout = params.containerTimeout;
+    if (typeof params.containerTimeout === 'number' && params.containerTimeout > 0) {
+      containerTimeout = params.containerTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
     }
   }
 
-  const maxExecutionTime =
-    imageTimeout +
-    builderTimeout +
-    containerTimeout +
-    getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT +
-    getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
+  const maxExecutionTime = imageTimeout + builderTimeout + containerTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -65,13 +60,12 @@ export function lockGetTimeoutCleanService(params?: LockGetTimeoutCleanServicePa
   let execTimeout = 0;
 
   if (params) {
-    if (typeof params.execTimeout === 'number') {
-      execTimeout = params.execTimeout;
+    if (typeof params.execTimeout === 'number' && params.execTimeout) {
+      execTimeout = params.execTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
     }
   }
 
-  const maxExecutionTime =
-    execTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
+  const maxExecutionTime = execTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -84,6 +78,7 @@ export type LockGetTimeoutBackupServiceParams = {
   stopTimeout?: number;
   volumeListUploadTimeout?: number;
   startTimeout?: number;
+  taskCount: number;
 };
 export function lockGetTimeoutBackupService(params?: LockGetTimeoutBackupServiceParams) {
   let execTimeout = 0;
@@ -92,27 +87,23 @@ export function lockGetTimeoutBackupService(params?: LockGetTimeoutBackupService
   let startTimeout = 0;
 
   if (params) {
-    if (typeof params.execTimeout === 'number') {
-      execTimeout = params.execTimeout;
+    if (typeof params.execTimeout === 'number' && params.execTimeout > 0) {
+      execTimeout = (params.execTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT) * params.taskCount;
     }
-    if (typeof params.stopTimeout === 'number') {
-      stopTimeout = params.stopTimeout;
+    if (typeof params.stopTimeout === 'number' && params.stopTimeout > 0) {
+      stopTimeout = (params.stopTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT) * params.taskCount;
     }
-    if (typeof params.volumeListUploadTimeout === 'number') {
-      volumeListUploadTimeout = params.volumeListUploadTimeout;
+    if (typeof params.volumeListUploadTimeout === 'number' && params.volumeListUploadTimeout > 0) {
+      volumeListUploadTimeout =
+        (params.volumeListUploadTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT) * params.taskCount;
     }
-    if (typeof params.startTimeout === 'number') {
-      startTimeout = params.startTimeout;
+    if (typeof params.startTimeout === 'number' && params.startTimeout > 0) {
+      startTimeout = (params.startTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT) * params.taskCount;
     }
   }
 
   const maxExecutionTime =
-    execTimeout +
-    stopTimeout +
-    volumeListUploadTimeout +
-    startTimeout +
-    getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT +
-    getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
+    execTimeout + stopTimeout + volumeListUploadTimeout + startTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,
@@ -127,13 +118,12 @@ export function lockGetTimeoutUpdateService(params?: LockGetTimeoutUpdateService
   let updateTimeout = 0;
 
   if (params) {
-    if (typeof params.updateTimeout === 'number') {
-      updateTimeout = params.updateTimeout;
+    if (typeof params.updateTimeout === 'number' && params.updateTimeout > 0) {
+      updateTimeout = params.updateTimeout + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
     }
   }
 
-  const maxExecutionTime =
-    updateTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT + getProcessEnv().SWARM_UTILS_PENDING_SERVICE_TIMEOUT;
+  const maxExecutionTime = updateTimeout + getProcessEnv().SWARM_UTILS_EXTRA_TIMEOUT;
   const maxOccupationTime = getProcessEnv().SWARM_UTILS_LOCK_TIMEOUT + maxExecutionTime;
   return {
     maxExecutionTime,

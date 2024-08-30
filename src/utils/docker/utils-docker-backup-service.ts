@@ -71,10 +71,11 @@ export async function dockerBackupServiceList(serviceList: DockerApiServiceLsIte
     }
 
     const lockTimeoutObj = lockGetTimeoutBackupService({
-      execTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT * taskList.length,
-      stopTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT * taskList.length,
-      volumeListUploadTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT * taskList.length,
-      startTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT * taskList.length,
+      execTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT,
+      stopTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT,
+      volumeListUploadTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT,
+      startTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT,
+      taskCount: taskList.length,
     });
     const lockKey = nameLock(serviceItem.Name);
 
