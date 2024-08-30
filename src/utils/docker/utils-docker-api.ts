@@ -32,25 +32,16 @@ export type DockerApiLoginParams = {
   user: string;
   password: string;
   url: string;
+  maskList?: MaskItem[];
 };
 export function dockerApiLoginCmd(params: DockerApiLoginParams) {
   return `docker login -u ${params.user} -p ${params.password} ${params.url}`;
 }
 export async function dockerApiLogin(params: DockerApiLoginParams) {
   const cmd = dockerApiLoginCmd(params);
-  const maskList: MaskItem[] = [
-    {
-      str: params.url,
-      val: params.url,
-    },
-    {
-      str: `-p ${params.password}`,
-      val: params.password,
-    },
-  ];
   return await dockerApiBashExec({
     cmd,
-    maskList,
+    maskList: params.maskList,
   });
 }
 
