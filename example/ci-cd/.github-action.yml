@@ -1,0 +1,47 @@
+name: ci-some-shop-back
+
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: registry.domain.com/some-shop-back
+  REGISTRY_URL: registry.domain.com
+  REGISTRY_USER: registry_user
+  REGISTRY_PASS: some_secret_password
+
+jobs:
+  #########
+  # BUILD
+  #########
+  build:
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: |
+          docker build . -t $IMAGE_NAME:latest
+      - name: Push
+        run: |
+          docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_URL
+          docker push $IMAGE_NAME:latest
+
+  #########
+  # DEPLOY
+  #########
+  deploy:
+    needs: build
+    steps:
+      - name: Deploy
+        run: |
+          docker rm -f swarm-utils_ci_update_some-shop-back_dev
+          docker run -i --rm \
+            -e TOKEN=dddfff123 \
+            -e SERVICE_NAME=some-shop-back_master \
+            -e IMAGE=$CI_REGISTRY_IMAGE:latest \
+            --network=swarm-utils-overlay-net \
+            --entrypoint "/bin/sh" \
+            --name swarm-utils_ci_update-service_some-shop-back_master \
+            alpine:latest -c \
+            'apk add curl && \
+              curl -v -X POST -H "Content-Type: application/json" \
+              -d "{\"token\":\"$TOKEN\",\"serviceName\":\"$SERVICE_NAME\",\"image\":\"$IMAGE\",\"isForce\":true}" \
+              http://swarm-utils:3000/api/update/service'
