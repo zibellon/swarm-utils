@@ -24,7 +24,7 @@ services:
         - "swarm-utils.update.registry.auth=true"
         - "swarm-utils.update.registry.user=some_username"
         - "swarm-utils.update.registry.password=some_secret_password"
-        - "swarm-utils.update.registry.url=gitlab-registry.domain.com"
+        - "swarm-utils.update.registry.url=registry.domain.com"
         - "swarm-utils.update.token=some_update_token"
 
 networks:

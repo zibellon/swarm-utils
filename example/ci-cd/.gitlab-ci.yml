@@ -1,0 +1,35 @@
+stages:
+  - build
+  - deploy
+
+#########
+#BUILD
+#########
+build:
+  stage: build
+  interruptible: true
+  script:
+    - docker build . -t $CI_REGISTRY_IMAGE:latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+#########
+#DEPLOY
+#########
+deploy:
+  stage: deploy
+  interruptible: true
+  script:
+    - |
+      docker run -i --rm \
+        -e TOKEN=dddfff123 \
+        -e SERVICE_NAME=some-shop_master \
+        -e IMAGE=$CI_REGISTRY_IMAGE:latest \
+        --network=swarm-utils-overlay-net \
+        --entrypoint "/bin/sh" \
+        --name swarm-utils_restart_some-shop_master \
+        alpine:latest -c \
+        'apk add curl && \
+          curl -v -X POST -H "Content-Type: application/json" \
+          -d "{\"token\":\"$TOKEN\",\"serviceName\":\"$SERVICE_NAME\",\"image\":\"$IMAGE\"}" \
+          http://swarm-utils:3000/api/update/service'

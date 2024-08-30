@@ -287,6 +287,18 @@
 5. Если в ENV они не указаны (Хоть одна из переменных - пустая)
    1. Будет ошибка 
 
+# Работа с docker-network, attach, overlay
+1. Немного теории
+   1. Сервис swarm-utils - работает в контуре docker-swarm
+   2. Все контейнеры в кластере docker-swarm - можно связать через overlay сеть
+      1. В этом сценарии - контейнеры могут общаться между собой
+   3. Если overlay сеть сделть attachable -> к ней можно присоединять обычные контейнеры, запущенные через docker run ...
+2. Практика
+   1. Создать overlay сеть, отдельную для swarm-utils
+   2. docker network create --driver overlay --subnet 10.48.0.0/16 --gateway 10.48.0.1 --attachable swarm-utils-overlay-net
+   3. 10.48.0.0/16 и 10.48.0.1 -> можно менять. Тут кому как надо
+   4. --attachable -> обязательный параметр
+
 # Основные команды DockerApi
 1. docker node ls --format json
 2. docker volume ls -f driver=local --format json

@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   master:
@@ -41,7 +41,7 @@ services:
         protocol: tcp
         mode: host
     networks:
-      main-overlay-net:
+      swarm-utils-overlay-net:
         aliases:
           - swarm-utils
     deploy:
@@ -51,8 +51,8 @@ services:
         constraints:
           - node.labels.node-type==Manager
       labels:
-        - "traefik.enable=false"
+        - 'traefik.enable=false'
 
 networks:
-  main-overlay-net:
+  swarm-utils-overlay-net:
     external: true

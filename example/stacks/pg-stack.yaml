@@ -26,7 +26,7 @@ services:
           - node.hostname==internal-worker-2
       labels:
         - 'traefik.enable=false'
-        # swarm-utils
+        # swarm-utils.backup
         - 'swarm-utils.backup.enable=true'
         - 'swarm-utils.backup.exec=pg_dump -U postgres some_shop_db_name | gzip > /tmp-backup/pg_dump.sql.gz'
         - 'swarm-utils.backup.exec.shell=/bin/sh'
