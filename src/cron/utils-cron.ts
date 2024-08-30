@@ -37,6 +37,8 @@ export async function initCron() {
           });
         });
       }
+
+      isCronProgress = false;
     }
   });
   cronJob.start();
