@@ -160,6 +160,7 @@ async function dockerUpdateServiceItem(
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: '/bin/sh',
     execCommand: execCommand,
+    logDriver: 'json-file',
     maskList: maskList,
   });
   logInfo('dockerUpdateServiceItem.exec.WAIT_FOR_COMPLETE', logData2);

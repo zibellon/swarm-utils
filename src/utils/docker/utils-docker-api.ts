@@ -259,7 +259,7 @@ export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
 }
 
 //---------
-//docker service create ...
+//docker service create
 //---------
 export type DockerApiServiceCreateParams = {
   name: string;
@@ -274,6 +274,7 @@ export type DockerApiServiceCreateParams = {
   image: string; // docker:25.0.5-cli-alpine3.20
   execShell?: string;
   execCommand?: string;
+  logDriver?: 'json-file';
   maskList?: MaskItem[];
 };
 export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) {
@@ -308,6 +309,9 @@ export function dockerApiServiceCreateCmd(params: DockerApiServiceCreateParams) 
         cmd += ` --mount ${mount}`;
       }
     }
+  }
+  if (params.logDriver) {
+    cmd += ` --log-driver ${params.logDriver}`;
   }
   cmd += ` ${params.image}`;
   if (typeof params.execCommand === 'string' && params.execCommand.length > 0) {
@@ -414,8 +418,9 @@ export type DockerApiInspectTaskItem = {
   NodeID: string; // 'n894nbopu8e41n2fa2o3wnj1n'
   Status: {
     Timestamp: string; // '2024-08-14T10:59:30.167664604Z'
-    State: string; // 'running', 'shutdown'
+    State: string; // 'running', 'shutdown', 'failed'
     Message: string; // 'started'
+    Err?: string; // task: non-zero exit (1)
     ContainerStatus: {
       ContainerID: string; // '84ec08ad826849b8a5d86758912eda93cf717b266b232c879bc5fbb1adc2de45'
       PID: number; // 355406
