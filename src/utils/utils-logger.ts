@@ -83,7 +83,9 @@ function printLog(level: string, message: string, extrasArr: any[]) {
     }
   }
 
-  console.log(JSON.stringify(newInfo, circularReplacer()));
+  const logString = JSON.stringify(newInfo, circularReplacer());
+  console.log(logString);
+  return JSON.parse(logString);
 }
 
 const isEmptyObj = (obj: any) => {
@@ -105,14 +107,14 @@ const circularReplacer = () => {
 };
 
 export function logInfo(message: string, meta: Record<string, any> = {}) {
-  printLog('info', message, [meta]);
+  return printLog('info', message, [meta]);
 }
 
 export function logWarn(message: string, meta: Record<string, any> = {}) {
-  printLog('warn', message, [meta]);
+  return printLog('warn', message, [meta]);
 }
 
 //Под вопросом на счет ANY
 export function logError(message: string, err: any, meta: Record<string, any> = {}) {
-  printLog('error', message, [err, meta]);
+  return printLog('error', message, [err, meta]);
 }
