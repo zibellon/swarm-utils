@@ -35,8 +35,29 @@ export async function updateServiceExec(params: UpdateServiceExecParams) {
       filterList,
     });
   }
-  await dockerUpdateServiceList([serviceList[0]], {
+  const resultList = await dockerUpdateServiceList({
+    serviceList: [serviceList[0]],
     force: params.force,
     image: params.image,
   });
+
+  let isFailed = false;
+  for (const updateResult of resultList) {
+    if (isFailed === true) {
+      continue;
+    }
+    if (updateResult.isFailed === true) {
+      isFailed = true;
+    }
+  }
+
+  if (isFailed === true) {
+    throwErrorSimple('updateServiceExec.ERR', {
+      resultList,
+    });
+  }
+
+  return {
+    resultList,
+  };
 }

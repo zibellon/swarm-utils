@@ -33,5 +33,27 @@ export async function backupServiceExec(params: BackupServiceExecParams) {
       filterList,
     });
   }
-  await dockerBackupServiceList([serviceList[0]]);
+  const resultList = await dockerBackupServiceList({
+    serviceList: [serviceList[0]],
+  });
+
+  let isFailed = false;
+  for (const resultItem of resultList) {
+    if (isFailed === true) {
+      continue;
+    }
+    if (resultItem.isFailed === true) {
+      isFailed = true;
+    }
+  }
+
+  if (isFailed === true) {
+    throwErrorSimple('backupServiceExec.ERR', {
+      resultList,
+    });
+  }
+
+  return {
+    resultList,
+  };
 }

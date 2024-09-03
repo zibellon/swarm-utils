@@ -5,7 +5,11 @@ import { lockGetTimeoutUpdateService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { MaskItem } from '../utils-mask';
 import { nameLock, nameUpdateService } from '../utils-names';
-import { dockerCheckAndRmHelpServicesForService, dockerWaitForServiceComplete } from './utils-docker';
+import {
+  dockerCheckAndRmHelpServicesForService,
+  dockerHelpServiceCompleteInfo,
+  dockerWaitForServiceComplete,
+} from './utils-docker';
 import {
   dockerApiInspectService,
   DockerApiInspectServiceItem,
@@ -15,20 +19,28 @@ import {
   dockerApiServiceUpdateCmd,
 } from './utils-docker-api';
 import { maskInspectServiceItem, maskRegistryParams } from './utils-docker-mask';
+import { DockerProcessServiceResultItem } from './utils-docker-types';
 
 type DockerUpdateServiceParams = {
+  serviceList: DockerApiServiceLsItem[];
   force: boolean;
   image: string;
 };
-export async function dockerUpdateServiceList(
-  serviceList: DockerApiServiceLsItem[],
-  params: DockerUpdateServiceParams
-) {
-  for (const serviceItem of serviceList) {
+export async function dockerUpdateServiceList(params: DockerUpdateServiceParams) {
+  const resultItemList: DockerProcessServiceResultItem[] = [];
+
+  for (const serviceItem of params.serviceList) {
     logInfo('dockerUpdateServiceList.serviceItem.INIT', {
       params,
       serviceItem,
     });
+
+    const resultItem: DockerProcessServiceResultItem = {
+      isFailed: false,
+      serviceId: serviceItem.ID,
+      serviceName: serviceItem.Name,
+      helpServiceCompleteList: [],
+    };
 
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
@@ -39,9 +51,12 @@ export async function dockerUpdateServiceList(
       });
     }
     if (inspectServiceInfo === null) {
-      logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
+      const messageJson = logWarn('dockerUpdateServiceList.serviceItem.inspectServiceInfo.NULL', {
         serviceItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
 
@@ -63,7 +78,10 @@ export async function dockerUpdateServiceList(
         lockKey,
         async () => {
           logInfo('dockerUpdateServiceList.serviceItem.lock.OK', logData);
-          await dockerUpdateServiceItem(serviceItem, inspectServiceInfo!, params);
+          const helpServiceCompleteResult = await dockerUpdateServiceItem(serviceItem, inspectServiceInfo!, params);
+          resultItem.helpServiceCompleteList.push(helpServiceCompleteResult);
+          resultItem.isFailed = helpServiceCompleteResult.isFailed;
+          resultItemList.push(resultItem);
           logInfo('dockerUpdateServiceList.serviceItem.OK', logData);
         },
         {
@@ -72,9 +90,16 @@ export async function dockerUpdateServiceList(
         }
       )
       .catch((err) => {
-        logError('dockerUpdateServiceList.serviceItem.ERR', err, logData);
+        const messageJson = logError('dockerUpdateServiceList.serviceItem.ERR', err, logData);
+        resultItem.isFailed = true;
+        resultItem.messageJson = messageJson;
+        resultItemList.push(resultItem);
       });
   }
+  logInfo('dockerUpdateServiceList.RESULT_LIST', {
+    resultItemList,
+  });
+  return resultItemList;
 }
 
 async function dockerUpdateServiceItem(
@@ -167,4 +192,11 @@ async function dockerUpdateServiceItem(
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(updateServiceServiceName, getProcessEnv().SWARM_UTILS_UPDATE_SERVICE_TIMEOUT);
   logInfo('dockerUpdateServiceItem.exec.OK', logData2);
+
+  const helpServiceCompleteInfo = await dockerHelpServiceCompleteInfo(updateServiceServiceName);
+  logInfo('dockerUpdateServiceItem.exec.HELP_SERVICE_COMPLETE_INFO', {
+    ...logData2,
+    helpServiceCompleteInfo,
+  });
+  return helpServiceCompleteInfo;
 }

@@ -13,5 +13,7 @@ export async function cronCleanServiceList(dateCron: Date) {
       value: 'swarm-utils.clean.enable=true',
     },
   ]);
-  await dockerCleanServiceList(serviceList);
+  await dockerCleanServiceList({
+    serviceList: serviceList,
+  });
 }

@@ -42,6 +42,7 @@ jobs:
             --name swarm-utils_ci_update-service_some-shop-back_master \
             alpine:latest -c \
             'apk add curl && \
-              curl -v -X POST -H "Content-Type: application/json" \
+              curl -v --fail-with-body -X POST \
+              -H "Content-Type: application/json" \
               -d "{\"token\":\"$TOKEN\",\"serviceName\":\"$SERVICE_NAME\",\"image\":\"$IMAGE\",\"isForce\":true}" \
               http://swarm-utils:3000/api/update/service'

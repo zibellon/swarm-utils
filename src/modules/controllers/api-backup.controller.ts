@@ -22,24 +22,17 @@ router.post('/api/backup/service', async (req, res, next) => {
   }
 
   try {
-    await backupServiceExec({
+    const result = await backupServiceExec({
       token: tokenBody,
       serviceName: serviceNameBody,
     });
+    res.json(result);
   } catch (err) {
-    logError('request.backup.API_ERROR', err, {
+    const bodyErr = logError('request.api_backup_service.API_ERROR', err, {
       body: req.body,
     });
-
-    res.status(400).json({
-      message: 'ApiError',
-    });
-    return;
+    res.status(400).json(bodyErr);
   }
-
-  res.json({
-    message: 'Ok',
-  });
 });
 
 export { router as apiBackupRouter };

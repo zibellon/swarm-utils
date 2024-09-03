@@ -30,26 +30,19 @@ router.post('/api/update/service', async (req, res, next) => {
   }
 
   try {
-    await updateServiceExec({
+    const result = await updateServiceExec({
       token: tokenBody,
       serviceName: serviceNameBody,
       force: typeof isForceBody === 'boolean' ? isForceBody : false,
       image: imageBody,
     });
+    res.json(result);
   } catch (err) {
-    logError('request.update.API_ERROR', err, {
+    const bodyErr = logError('request.api_update_service.API_ERROR', err, {
       body: req.body,
     });
-
-    res.status(400).json({
-      message: 'ApiError',
-    });
-    return;
+    res.status(400).json(bodyErr);
   }
-
-  res.json({
-    message: 'Ok',
-  });
 });
 
 export { router as apiUpdateRouter };

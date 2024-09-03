@@ -9,5 +9,7 @@ export async function cronCleanNodeList(dateCron: Date) {
 
   // Очистка Node
   const nodeList = await dockerApiNodeLs();
-  await dockerCleanNodeList(nodeList);
+  await dockerCleanNodeList({
+    nodeList: nodeList,
+  });
 }

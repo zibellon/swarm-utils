@@ -1,10 +1,13 @@
 import { getProcessEnv } from '../utils-env-config';
+import { throwErrorSimple } from '../utils-error';
 import { lockGetTimeoutCleanService, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanServiceExec, nameLock } from '../utils-names';
 import {
   dockerCheckAndRmHelpServices,
   dockerCheckAndRmHelpServicesForService,
+  dockerHelpServiceCompleteInfo,
+  DockerHelpServiceCompleteRes,
   dockerWaitForServiceComplete,
 } from './utils-docker';
 import {
@@ -17,12 +20,25 @@ import {
   DockerApiServicePsItem,
 } from './utils-docker-api';
 import { maskInspectServiceItem, maskInspectTaskItem } from './utils-docker-mask';
+import { DockerProcessServiceResultItem } from './utils-docker-types';
 
-export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem[]) {
-  for (const serviceItem of serviceList) {
+type DockerCleanServiceListParams = {
+  serviceList: DockerApiServiceLsItem[];
+};
+export async function dockerCleanServiceList(params: DockerCleanServiceListParams) {
+  const resultItemList: DockerProcessServiceResultItem[] = [];
+
+  for (const serviceItem of params.serviceList) {
     logInfo('dockerCleanServiceList.serviceItem.INIT', {
       serviceItem,
     });
+
+    const resultItem: DockerProcessServiceResultItem = {
+      isFailed: false,
+      serviceId: serviceItem.ID,
+      serviceName: serviceItem.Name,
+      helpServiceCompleteList: [],
+    };
 
     let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
     try {
@@ -33,9 +49,12 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       });
     }
     if (inspectServiceInfo === null) {
-      logWarn('dockerCleanServiceList.serviceItem.inspectServiceInfo.NULL', {
+      const messageJson = logWarn('dockerCleanServiceList.serviceItem.inspectServiceInfo.NULL', {
         serviceItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
 
@@ -53,9 +72,12 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
       });
     }
     if (taskList === null || taskList.length === 0) {
-      logWarn('dockerCleanServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
+      const messageJson = logWarn('dockerCleanServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
         serviceItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
 
@@ -77,7 +99,23 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         lockKey,
         async () => {
           logInfo('dockerCleanServiceList.serviceItem.lock.OK', logData);
-          await dockerCleanServiceItem(serviceItem, inspectServiceInfo!, taskList!);
+          const helpServiceCompleteResultList = await dockerCleanServiceItem(
+            serviceItem,
+            inspectServiceInfo!,
+            taskList!
+          );
+          if (helpServiceCompleteResultList.length > 0) {
+            for (const helpService of helpServiceCompleteResultList) {
+              if (resultItem.isFailed === false && helpService.isFailed === true) {
+                resultItem.isFailed = true;
+              }
+              resultItem.helpServiceCompleteList.push(helpService);
+            }
+          } else {
+            resultItem.isFailed = true;
+            resultItem.messageString = 'helpServiceCompleteResultList.EMPTY';
+          }
+          resultItemList.push(resultItem);
           logInfo('dockerCleanServiceList.serviceItem.OK', logData);
         },
         {
@@ -86,9 +124,16 @@ export async function dockerCleanServiceList(serviceList: DockerApiServiceLsItem
         }
       )
       .catch((err) => {
-        logError('dockerCleanServiceList.serviceItem.ERR', err, logData);
+        const messageJson = logError('dockerCleanServiceList.serviceItem.ERR', err, logData);
+        resultItem.isFailed = true;
+        resultItem.messageJson = messageJson;
+        resultItemList.push(resultItem);
       });
   }
+  logInfo('dockerCleanServiceList.RESULT_LIST', {
+    resultItemList,
+  });
+  return resultItemList;
 }
 
 async function dockerCleanServiceItem(
@@ -108,11 +153,9 @@ async function dockerCleanServiceItem(
     return el[0] === 'swarm-utils.clean.exec' && el[1].length > 0;
   });
   if (!execLabelObj) {
-    logWarn('cronCleanServiceItem.execLabelObj.NULL', {
-      serviceItem,
-    });
-    return;
+    throwErrorSimple('cronCleanServiceItem.execLabelObj.NULL', logData);
   }
+
   logInfo('dockerCleanServiceItem.EXEC_LABEL_OBJ', {
     ...logData,
     execLabelObj,
@@ -128,6 +171,7 @@ async function dockerCleanServiceItem(
   //---------
   // EXEC
   //---------
+  const helpServiceCompleteResultList: DockerHelpServiceCompleteRes[] = [];
   for (const taskItem of taskList) {
     const logData2 = {
       ...logData,
@@ -137,17 +181,19 @@ async function dockerCleanServiceItem(
     try {
       logInfo('dockerCleanServiceItem.taskItem.exec.INIT', logData2);
       // Непосредственно EXEC
-      await dockerCleanServiceItemExecOnTask({
+      const helpServiceCompleteResult = await dockerCleanServiceItemExecOnTask({
         serviceItem,
         taskItem,
         execCommand: execLabelObj[1],
         execShell: execShellLabelObj ? execShellLabelObj[1] : getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_SHELL,
       });
+      helpServiceCompleteResultList.push(helpServiceCompleteResult);
       logInfo('dockerCleanServiceItem.taskItem.exec.OK', logData2);
     } catch (err) {
       logError('dockerCleanServiceItem.taskItem.exec.ERR', err, logData2);
     }
   }
+  return helpServiceCompleteResultList;
 }
 
 type DockerCleanServiceItemExecOnTaskParams = {
@@ -164,8 +210,7 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
 
   const inspectTaskInfo = await dockerApiInspectTask(params.taskItem.ID);
   if (!inspectTaskInfo) {
-    logWarn('dockerCleanServiceItemExecOnTask.taskInspect.NULL', logData);
-    return;
+    throwErrorSimple('dockerCleanServiceItemExecOnTask.taskInspect.NULL', logData);
   }
 
   const execServiceName = nameCleanServiceExec(params.serviceItem.Name);
@@ -206,9 +251,17 @@ async function dockerCleanServiceItemExecOnTask(params: DockerCleanServiceItemEx
     mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
     execShell: '/bin/sh',
     execCommand: dockerExecCommand,
+    logDriver: 'json-file',
   });
   logInfo('dockerCleanServiceItemExecOnTask.exec.WAIT_FOR_COMPLETE', logData2);
   // WAIT FOR SERVICE COMPLETE
   await dockerWaitForServiceComplete(execServiceName, getProcessEnv().SWARM_UTILS_CLEAN_SERVICE_EXEC_TIMEOUT);
   logInfo('dockerCleanServiceItemExecOnTask.exec.OK', logData2);
+
+  const helpServiceCompleteInfo = await dockerHelpServiceCompleteInfo(execServiceName);
+  logInfo('dockerCleanServiceItemExecOnTask.exec.HELP_SERVICE_COMPLETE_INFO', {
+    ...logData2,
+    helpServiceCompleteInfo,
+  });
+  return helpServiceCompleteInfo;
 }

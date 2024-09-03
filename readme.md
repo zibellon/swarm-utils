@@ -276,6 +276,23 @@
    3. 10.48.0.0/16 и 10.48.0.1 -> можно менять. Тут кому как надо
    4. --attachable -> обязательный параметр
 
+# Сбор результатов с каждого helpService
+1. Как известно из документации Docker: 1 service === MANY tasks
+2. Введем определения
+   1. TASK
+   2. HELP_SERVICE
+   3. TARGET_SERVICE/TARGET_NODE
+3. После завершения команды `dockerWaitForServiceComplete` запускается команда `dockerHelpServiceCompleteInfo`
+   1. Это команда собирает логи с каждой `TASK` в указанном SERVICE (по serviceName)
+   2. Что собирать логи с `SERVICE/TASK` - нужно запускать `SERVICE` с log-driver=json-file/journald
+   3. В данном случае serviceName === `HELP_SERVICE.name`
+4. Если хоть одна `TASK` упала с ошибкой -> ВЕСЬ `HELP_SERVICE` упал с ошибкой
+   1. За это отвечает параметр isFailed в результате команды `dockerHelpServiceCompleteInfo`
+5. На самом верхнем уровне (Где `async-lock`) - возвращается массив из результатов по каждому `HELP_SERVICE`
+   1. Например: При clean-node - заускается 3 helpService. Container, image, builder
+6. Если хоть один `HELP_SERVICE` упал с ошибкой -> вся процедура по `TARGET_SERVICE/TARGET_NODE` прошла с ошибкой
+7. Из метода возвращается массив с резльтатами
+
 # Основные команды DockerApi
 1. docker node ls --format json
 2. docker volume ls -f driver=local --format json
@@ -296,7 +313,8 @@
 10. docker service ls --filter mode=replicated --filter label="docker-backuper.stop=true" --format json
 11. docker service scale SERVICE_NAME=123
    1. docker service scale SERVICE_NAME=0
-12. docker service logs SERVICE_NAME
+12. docker service logs SERVICE_NAME/SERVICE_ID/TASK_NAME/TASK_ID
+    1.  Проблема: работает только на сервисы с log-driver = json-file/journald
 13. docker service remove SERVICE_NAME
 14. docker inspect --type
     1.  container|image|node|network|secret|service|volume|task|plugin
@@ -364,3 +382,11 @@
 13. Немного переработать структуру файлов
     1.  Связанных с Docker
     2.  Они стали достаточно большими
+14. Чистить контейнеры после отработки
+    1.  Сразу очищать, а не ждать некст действия
+15. При update - есть проблема с логами
+    1.  Хотим собрать логи с сервиса, которы обновляли
+    2.  А у сервиса настроен log-drivar как syslog или что-то еще
+    3.  Выполнить команду docker service logs XXX -> не получится, работает на сервисы с log-driver=json-file/journald
+    4.  А при перезапуске - контейнер упал ...
+    5.  В логах команды docker service update будет только: `service update paused: update paused due to failure or early termination of task TASK_ID`

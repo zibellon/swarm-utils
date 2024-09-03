@@ -39,7 +39,29 @@ export async function cleanServiceExec(params: CleanServiceExecParams) {
       filterList,
     });
   }
-  await dockerCleanServiceList([serviceList[0]]);
+  const resultList = await dockerCleanServiceList({
+    serviceList: [serviceList[0]],
+  });
+
+  let isFailed = false;
+  for (const resultItem of resultList) {
+    if (isFailed === true) {
+      continue;
+    }
+    if (resultItem.isFailed === true) {
+      isFailed = true;
+    }
+  }
+
+  if (isFailed === true) {
+    throwErrorSimple('cleanServiceExec.ERR', {
+      resultList,
+    });
+  }
+
+  return {
+    resultList,
+  };
 }
 
 type CleanNodeExecParams = {
@@ -73,5 +95,27 @@ export async function cleanNodeExec(params: CleanNodeExecParams) {
       filterList,
     });
   }
-  await dockerCleanNodeList([nodeList[0]]);
+  const resultList = await dockerCleanNodeList({
+    nodeList: [nodeList[0]],
+  });
+
+  let isFailed = false;
+  for (const resultItem of resultList) {
+    if (isFailed === true) {
+      continue;
+    }
+    if (resultItem.isFailed === true) {
+      isFailed = true;
+    }
+  }
+
+  if (isFailed === true) {
+    throwErrorSimple('cleanNodeExec.ERR', {
+      resultList,
+    });
+  }
+
+  return {
+    resultList,
+  };
 }

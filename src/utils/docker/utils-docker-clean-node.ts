@@ -2,7 +2,12 @@ import { getProcessEnv } from '../utils-env-config';
 import { lockGetTimeoutCleanNode, lockResource } from '../utils-lock';
 import { logError, logInfo, logWarn } from '../utils-logger';
 import { nameCleanNodeBuilder, nameCleanNodeContainers, nameCleanNodeImages, nameLock } from '../utils-names';
-import { dockerCheckAndRmHelpServicesForNode, dockerWaitForServiceComplete } from './utils-docker';
+import {
+  dockerCheckAndRmHelpServicesForNode,
+  dockerHelpServiceCompleteInfo,
+  DockerHelpServiceCompleteRes,
+  dockerWaitForServiceComplete,
+} from './utils-docker';
 import {
   dockerApiInspectNode,
   DockerApiInspectNodeItem,
@@ -10,12 +15,25 @@ import {
   dockerApiServiceCreate,
 } from './utils-docker-api';
 import { maskInspectNodeItem } from './utils-docker-mask';
+import { DockerProcessNodeResultItem } from './utils-docker-types';
 
-export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
-  for (const nodeItem of nodeList) {
+type DockerCleanNodeListParams = {
+  nodeList: DockerApiNodeLsItem[];
+};
+export async function dockerCleanNodeList(params: DockerCleanNodeListParams) {
+  const resultItemList: DockerProcessNodeResultItem[] = [];
+
+  for (const nodeItem of params.nodeList) {
     logInfo('dockerCleanNodeList.nodeItem.INIT', {
       nodeItem,
     });
+
+    const resultItem: DockerProcessNodeResultItem = {
+      isFailed: false,
+      nodeId: nodeItem.ID,
+      nodeName: nodeItem.Hostname,
+      helpServiceCompleteList: [],
+    };
 
     // Потом пригодится - для получения списка labels
     let nodeInspectInfo: DockerApiInspectNodeItem | null = null;
@@ -27,23 +45,32 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
       });
     }
     if (nodeInspectInfo === null) {
-      logWarn('dockerCleanNodeList.nodeItem.nodeInspectInfo.NULL', {
+      const messageJson = logWarn('dockerCleanNodeList.nodeItem.nodeInspectInfo.NULL', {
         nodeItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
 
     // Проверка, что NODE вообще ДОСТУПНА
     if (nodeItem.Status !== 'Ready') {
-      logWarn('dockerCleanNodeList.nodeItem.Status.INCORRECT', {
+      const messageJson = logWarn('dockerCleanNodeList.nodeItem.Status.INCORRECT', {
         nodeItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
     if (nodeItem.Availability !== 'Active') {
-      logWarn('dockerCleanNodeList.nodeItem.Availability.INCORRECT', {
+      const messageJson = logWarn('dockerCleanNodeList.nodeItem.Availability.INCORRECT', {
         nodeItem,
       });
+      resultItem.isFailed = true;
+      resultItem.messageJson = messageJson;
+      resultItemList.push(resultItem);
       continue;
     }
 
@@ -66,7 +93,19 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
         lockKey,
         async () => {
           logInfo('dockerCleanNodeList.nodeItem.lock.OK', logData);
-          await dockerCleanNodeItem(nodeItem, nodeInspectInfo!);
+          const helpServiceCompleteResultList = await dockerCleanNodeItem(nodeItem, nodeInspectInfo!);
+          if (helpServiceCompleteResultList.length > 0) {
+            for (const helpService of helpServiceCompleteResultList) {
+              if (resultItem.isFailed === false && helpService.isFailed === true) {
+                resultItem.isFailed = true;
+              }
+              resultItem.helpServiceCompleteList.push(helpService);
+            }
+          } else {
+            resultItem.isFailed = true;
+            resultItem.messageString = 'helpServiceCompleteResultList.EMPTY';
+          }
+          resultItemList.push(resultItem);
           logInfo('dockerCleanNodeList.nodeItem.OK', logData);
         },
         {
@@ -75,9 +114,16 @@ export async function dockerCleanNodeList(nodeList: DockerApiNodeLsItem[]) {
         }
       )
       .catch((err) => {
-        logError('dockerCleanNodeList.nodeItem.acquire.ERR', err, logData);
+        const messageJson = logError('dockerCleanNodeList.nodeItem.acquire.ERR', err, logData);
+        resultItem.isFailed = true;
+        resultItem.messageJson = messageJson;
+        resultItemList.push(resultItem);
       });
   }
+  logInfo('dockerCleanNodeList.RESULT_LIST', {
+    resultItemList,
+  });
+  return resultItemList;
 }
 
 async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInfo: DockerApiInspectNodeItem) {
@@ -93,6 +139,8 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
   await dockerCheckAndRmHelpServicesForNode(nodeKey);
 
   logInfo('dockerCleanNodeItem.PROCESS', logData);
+
+  const helpServiceCompleteResultList: DockerHelpServiceCompleteRes[] = [];
 
   //---------
   //IMAGE
@@ -116,11 +164,19 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
       execShell: '/bin/sh',
       execCommand: 'docker image prune -a -f',
+      logDriver: 'json-file',
     });
     logInfo('dockerCleanNodeItem.image.WAIT_FOR_COMPLETE', logData2);
     // WAIT FOR SERVICE COMPLETE
     await dockerWaitForServiceComplete(cleanImageServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_IMAGE_TIMEOUT);
     logInfo('dockerCleanNodeItem.image.OK', logData2);
+
+    const helpServiceCompleteInfo = await dockerHelpServiceCompleteInfo(cleanImageServiceName);
+    logInfo('dockerCleanNodeItem.image.HELP_SERVICE_COMPLETE_INFO', {
+      ...logData2,
+      helpServiceCompleteInfo,
+    });
+    helpServiceCompleteResultList.push(helpServiceCompleteInfo);
   } catch (err) {
     logError('dockerCleanNodeItem.image.ERR', err, logData);
   }
@@ -147,17 +203,25 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
       execShell: '/bin/sh',
       execCommand: 'docker builder prune -f',
+      logDriver: 'json-file',
     });
     logInfo('dockerCleanNodeItem.builder.WAIT_FOR_COMPLETE', logData2);
     // WAIT FOR SERVICE COMPLETE
     await dockerWaitForServiceComplete(cleanBuilderServiceName, getProcessEnv().SWARM_UTILS_CLEAN_NODE_BUILDER_TIMEOUT);
     logInfo('dockerCleanNodeItem.builder.OK', logData2);
+
+    const helpServiceCompleteInfo = await dockerHelpServiceCompleteInfo(cleanBuilderServiceName);
+    logInfo('dockerCleanNodeItem.builder.HELP_SERVICE_COMPLETE_INFO', {
+      ...logData2,
+      helpServiceCompleteInfo,
+    });
+    helpServiceCompleteResultList.push(helpServiceCompleteInfo);
   } catch (err) {
     logError('dockerCleanNodeItem.builder.ERR', err, logData);
   }
 
   //---------
-  //CONTAINER (exited and others)
+  //CONTAINER (exited, stopped and other status - clean all)
   //---------
   try {
     const cleanContainerServiceName = nameCleanNodeContainers(nodeKey);
@@ -177,6 +241,7 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       mountList: ['type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock,readonly'],
       execShell: '/bin/sh',
       execCommand: 'docker container prune -f',
+      logDriver: 'json-file',
     });
     logInfo('dockerCleanNodeItem.container.WAIT_FOR_COMPLETE', logData2);
     // WAIT FOR SERVICE COMPLETE
@@ -185,7 +250,15 @@ async function dockerCleanNodeItem(nodeItem: DockerApiNodeLsItem, nodeInspectInf
       getProcessEnv().SWARM_UTILS_CLEAN_NODE_CONTAINER_TIMEOUT
     );
     logInfo('dockerCleanNodeItem.container.OK', logData2);
+
+    const helpServiceCompleteInfo = await dockerHelpServiceCompleteInfo(cleanContainerServiceName);
+    logInfo('dockerCleanNodeItem.container.HELP_SERVICE_COMPLETE_INFO', {
+      ...logData2,
+      helpServiceCompleteInfo,
+    });
+    helpServiceCompleteResultList.push(helpServiceCompleteInfo);
   } catch (err) {
     logError('dockerCleanNodeItem.container.ERR', err, logData);
   }
+  return helpServiceCompleteResultList;
 }

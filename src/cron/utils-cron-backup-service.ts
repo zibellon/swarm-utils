@@ -13,5 +13,7 @@ export async function cronBackupServiceList(dateCron: Date) {
       value: 'swarm-utils.backup.enable=true',
     },
   ]);
-  await dockerBackupServiceList(serviceList);
+  await dockerBackupServiceList({
+    serviceList: serviceList,
+  });
 }

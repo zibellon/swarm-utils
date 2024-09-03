@@ -4,6 +4,7 @@ import { logInfo, logWarn } from '../utils-logger';
 import { nameGetAllServiceNamesForNode, nameGetAllServiceNamesForService } from '../utils-names';
 import {
   dockerApiInspectTask,
+  dockerApiServiceLogs,
   dockerApiServiceLs,
   dockerApiServicePs,
   dockerApiServiceRemove,
@@ -111,6 +112,84 @@ export async function dockerServiceCanRemove(serviceName: string) {
     canRemove,
     isPendingTimeout,
   };
+}
+
+// Получение информации о завершенном (Complete) сервисе
+export type DockerHelpServiceCompleteRes = {
+  isFailed: boolean;
+  serviceId: string;
+  serviceName: string;
+  taskList: DockerHelpServiceCompleteTaskRes[];
+};
+type DockerHelpServiceCompleteTaskRes = {
+  taskId: string;
+  taskName: string;
+  state: string;
+  message: string;
+  err?: string;
+  logList: string[];
+};
+export async function dockerHelpServiceCompleteInfo(serviceName: string) {
+  logInfo('dockerHelpServiceCompleteInfo.INIT', {
+    serviceName,
+  });
+
+  const serviceList = await dockerApiServiceLs([
+    {
+      key: 'name',
+      value: serviceName,
+    },
+  ]);
+
+  const result: DockerHelpServiceCompleteRes = {
+    isFailed: false,
+    serviceId: serviceList.length > 0 ? serviceList[0].ID : 'nothing',
+    serviceName: serviceName,
+    taskList: [],
+  };
+
+  const taskList = await dockerApiServicePs(serviceName);
+
+  for (const taskItem of taskList) {
+    const logData = {
+      serviceName,
+      taskItem,
+    };
+    logInfo('dockerHelpServiceCompleteInfo.taskItem.INIT', logData);
+    const inspectTaskInfo = await dockerApiInspectTask(taskItem.ID);
+    if (inspectTaskInfo === null) {
+      logWarn('dockerHelpServiceCompleteInfo.taskItem.inspect.NULL', logData);
+      continue;
+    }
+    logInfo('dockerHelpServiceCompleteInfo.taskItem.inspect.OK', {
+      ...logData,
+      inspectTaskInfo: maskInspectTaskItem(inspectTaskInfo),
+    });
+
+    // Если хоть одна из тасок FAILED -> считаем что весь сервис упал
+    if (
+      inspectTaskInfo.Status.State === 'failed' ||
+      (typeof inspectTaskInfo.Status.Err === 'string' && inspectTaskInfo.Status.Err.length > 0)
+    ) {
+      result.isFailed = true;
+    }
+
+    // Сбор логов с каждой таски
+    const taskLogList = await dockerApiServiceLogs(taskItem.ID);
+
+    // Status.State: 'failed',
+    // Status.Message: 'started',
+    // Status.Err: 'task: non-zero exit (1)',
+    result.taskList.push({
+      taskId: taskItem.ID,
+      taskName: taskItem.Name,
+      state: inspectTaskInfo.Status.State,
+      message: inspectTaskInfo.Status.Message,
+      err: inspectTaskInfo.Status.Err,
+      logList: taskLogList,
+    });
+  }
+  return result;
 }
 
 // Метод для ожидания завершения работы сервиса
