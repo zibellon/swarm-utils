@@ -252,10 +252,20 @@ export async function dockerApiServiceLogs(serviceIdOrTaskId: string) {
   const result = await dockerApiBashExec({
     cmd,
   });
-  return result.stdout
-    .split('\n')
-    .filter((el) => el.length > 0)
-    .map((el) => JSON.parse(el));
+
+  const logList: string[] = [];
+
+  //stdout
+  const stdoutList = result.stdout.split('\n').filter((el) => el.length > 0);
+  for (const el of stdoutList) {
+    if (el.length > 0) logList.push(el);
+  }
+  //stdErr
+  const stderrList = result.stderr.split('\n').filter((el) => el.length > 0);
+  for (const el of stderrList) {
+    if (el.length > 0) logList.push(el);
+  }
+  return logList;
 }
 
 //---------
@@ -492,7 +502,7 @@ export function dockerApiInspectNodeCmd(nodeId: string) {
   return `docker inspect ${nodeId} --type node --format json`;
 }
 export async function dockerApiInspectNode(nodeId: string) {
-  const cmd = dockerApiInspectTaskCmd(nodeId);
+  const cmd = dockerApiInspectNodeCmd(nodeId);
   const result = await dockerApiBashExec({
     cmd,
   });
