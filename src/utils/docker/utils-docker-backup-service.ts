@@ -131,6 +131,10 @@ export async function dockerBackupServiceList(params: DockerBackupServiceListPar
           }
           resultItemList.push(resultItem);
           logInfo('dockerBackupServiceList.serviceItem.OK', logData);
+
+          await dockerCheckAndRmHelpServicesForService(serviceItem.Name).catch((err) => {
+            logError('dockerBackupServiceList.serviceItem.dockerCheckAndRmHelpServicesForService.ERR', err, logData);
+          });
         },
         {
           maxExecutionTime: lockTimeoutObj.maxExecutionTime,
@@ -280,7 +284,9 @@ async function dockerBackupServiceItem(
     try {
       logInfo('dockerBackupServiceItem.stop.INIT', logData2);
       // Непосредственно STOP
-      const helpServiceCompleteResult = await dockerBackupServiceStop(serviceItem);
+      const helpServiceCompleteResult = await dockerBackupServiceStop({
+        serviceItem,
+      });
       helpServiceCompleteResultList.push(helpServiceCompleteResult);
       logInfo('dockerBackupServiceItem.stop.OK', logData2);
     } catch (err) {
@@ -333,7 +339,10 @@ async function dockerBackupServiceItem(
     try {
       logInfo('dockerBackupServiceItem.start.INIT', logData2);
       // Непосредственно START
-      const helpServiceCompleteResult = await dockerBackupServiceStart(serviceItem, currentDesiredReplicas);
+      const helpServiceCompleteResult = await dockerBackupServiceStart({
+        serviceItem,
+        replicasCount: currentDesiredReplicas,
+      });
       helpServiceCompleteResultList.push(helpServiceCompleteResult);
       logInfo('dockerBackupServiceItem.start.OK', logData2);
     } catch (err) {
@@ -414,18 +423,21 @@ async function dockerBackupServiceExec(params: DockerBackupServiceExecParams) {
   return helpServiceCompleteInfo;
 }
 
-async function dockerBackupServiceStop(serviceItem: DockerApiServiceLsItem) {
+type DockerBackupServiceStopParams = {
+  serviceItem: DockerApiServiceLsItem;
+};
+async function dockerBackupServiceStop(params: DockerBackupServiceStopParams) {
   const logData = {
-    serviceItem,
+    ...params,
   };
   logInfo('dockerBackupServiceStop.INIT', logData);
 
-  const scaleDownCmd = dockerApiServiceScaleCmd(serviceItem.Name, 0);
+  const scaleDownCmd = dockerApiServiceScaleCmd(params.serviceItem.Name, 0);
 
   //---------
   //SCALE_DOWN
   //---------
-  const scaleDownServiceName = nameBackupServiceScaleDown(serviceItem.Name);
+  const scaleDownServiceName = nameBackupServiceScaleDown(params.serviceItem.Name);
   const logData2 = {
     ...logData,
     scaleDownCmd,
@@ -545,19 +557,22 @@ async function dockerBackupServiceUploadVolumeList(params: DockerBackupServiceUp
   return helpServiceCompleteInfo;
 }
 
-async function dockerBackupServiceStart(serviceItem: DockerApiServiceLsItem, replicasCount: number) {
+type DockerBackupServiceStartParams = {
+  serviceItem: DockerApiServiceLsItem;
+  replicasCount: number;
+};
+async function dockerBackupServiceStart(params: DockerBackupServiceStartParams) {
   const logData = {
-    serviceItem,
-    replicasCount,
+    ...params,
   };
   logInfo('dockerBackupServiceStart.INIT', logData);
 
-  const scaleUpCmd = dockerApiServiceScaleCmd(serviceItem.Name, replicasCount);
+  const scaleUpCmd = dockerApiServiceScaleCmd(params.serviceItem.Name, params.replicasCount);
 
   //---------
   //SCALE_UP
   //---------
-  const scaleUpServiceName = nameBackupServiceScaleUp(serviceItem.Name);
+  const scaleUpServiceName = nameBackupServiceScaleUp(params.serviceItem.Name);
   const logData2 = {
     ...logData,
     scaleUpCmd,

@@ -117,6 +117,10 @@ export async function dockerCleanServiceList(params: DockerCleanServiceListParam
           }
           resultItemList.push(resultItem);
           logInfo('dockerCleanServiceList.serviceItem.OK', logData);
+
+          await dockerCheckAndRmHelpServicesForService(serviceItem.Name).catch((err) => {
+            logError('dockerCleanServiceList.serviceItem.dockerCheckAndRmHelpServicesForService.ERR', err, logData);
+          });
         },
         {
           maxExecutionTime: lockTimeoutObj.maxExecutionTime,

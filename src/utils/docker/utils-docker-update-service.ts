@@ -83,6 +83,10 @@ export async function dockerUpdateServiceList(params: DockerUpdateServiceParams)
           resultItem.isFailed = helpServiceCompleteResult.isFailed;
           resultItemList.push(resultItem);
           logInfo('dockerUpdateServiceList.serviceItem.OK', logData);
+
+          await dockerCheckAndRmHelpServicesForService(serviceItem.Name).catch((err) => {
+            logError('dockerUpdateServiceList.serviceItem.dockerCheckAndRmHelpServicesForService.ERR', err, logData);
+          });
         },
         {
           maxExecutionTime: lockTimeoutObj.maxExecutionTime,

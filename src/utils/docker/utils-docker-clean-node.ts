@@ -107,6 +107,10 @@ export async function dockerCleanNodeList(params: DockerCleanNodeListParams) {
           }
           resultItemList.push(resultItem);
           logInfo('dockerCleanNodeList.nodeItem.OK', logData);
+
+          await dockerCheckAndRmHelpServicesForNode(nodeItem.ID).catch((err) => {
+            logError('dockerCleanNodeList.nodeItem.dockerCheckAndRmHelpServicesForNode.ERR', err, logData);
+          });
         },
         {
           maxExecutionTime: lockTimeoutObj.maxExecutionTime,
