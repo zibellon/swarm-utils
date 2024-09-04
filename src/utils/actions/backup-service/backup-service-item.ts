@@ -1,173 +1,46 @@
-import { authGetS3Params, AuthGetS3ParamsRes } from '../utils-auth';
-import { getProcessEnv } from '../utils-env-config';
-import { throwErrorSimple } from '../utils-error';
-import { lockGetTimeoutBackupService, lockResource } from '../utils-lock';
-import { logError, logInfo, logWarn } from '../utils-logger';
-import { MaskItem } from '../utils-mask';
-import {
-  nameBackupServiceExec,
-  nameBackupServiceScaleDown,
-  nameBackupServiceScaleUp,
-  nameBackupServiceTarUpload,
-  nameLock,
-} from '../utils-names';
 import {
   dockerCheckAndRmHelpServices,
   dockerCheckAndRmHelpServicesForService,
   dockerHelpServiceCompleteInfo,
   DockerHelpServiceCompleteRes,
   dockerWaitForServiceComplete,
-} from './utils-docker';
+} from 'src/utils/docker/utils-docker';
 import {
-  dockerApiInspectService,
   DockerApiInspectServiceItem,
   dockerApiInspectTask,
   DockerApiInspectTaskItem,
   dockerApiServiceCreate,
   DockerApiServiceLsItem,
-  dockerApiServicePs,
   DockerApiServicePsItem,
   dockerApiServiceScaleCmd,
-} from './utils-docker-api';
-import { maskInspectServiceItem, maskInspectTaskItem, maskS3Params } from './utils-docker-mask';
-import { DockerProcessServiceResultItem } from './utils-docker-types';
+} from 'src/utils/docker/utils-docker-api';
+import { maskInspectServiceItem, maskInspectTaskItem, maskS3Params } from 'src/utils/docker/utils-docker-mask';
+import { authGetS3Params, AuthGetS3ParamsRes } from 'src/utils/utils-auth';
+import { getProcessEnv } from 'src/utils/utils-env-config';
+import { throwErrorSimple } from 'src/utils/utils-error';
+import { logError, logInfo, logWarn } from 'src/utils/utils-logger';
+import { MaskItem } from 'src/utils/utils-mask';
+import {
+  nameBackupServiceExec,
+  nameBackupServiceScaleDown,
+  nameBackupServiceScaleUp,
+  nameBackupServiceTarUpload,
+} from 'src/utils/utils-names';
 
-type DockerBackupServiceListParams = {
-  serviceList: DockerApiServiceLsItem[];
+type DockerBackupServiceItemParams = {
+  serviceItem: DockerApiServiceLsItem;
+  inspectServiceInfo: DockerApiInspectServiceItem;
+  taskList: DockerApiServicePsItem[];
 };
-export async function dockerBackupServiceList(params: DockerBackupServiceListParams) {
-  const resultItemList: DockerProcessServiceResultItem[] = [];
-
-  for (const serviceItem of params.serviceList) {
-    logInfo('dockerBackupServiceList.serviceItem.INIT', {
-      serviceItem,
-    });
-
-    const resultItem: DockerProcessServiceResultItem = {
-      isFailed: false,
-      serviceId: serviceItem.ID,
-      serviceName: serviceItem.Name,
-      helpServiceCompleteList: [],
-    };
-
-    let inspectServiceInfo: DockerApiInspectServiceItem | null = null;
-    try {
-      inspectServiceInfo = await dockerApiInspectService(serviceItem.ID);
-    } catch (err) {
-      logError('dockerBackupServiceList.serviceItem.dockerApiInspectService.ERR', err, {
-        serviceItem,
-      });
-    }
-    if (inspectServiceInfo === null) {
-      const messageJson = logWarn('dockerBackupServiceList.serviceItem.inspectServiceInfo.NULL', {
-        serviceItem,
-      });
-      resultItem.isFailed = true;
-      resultItem.messageJson = messageJson;
-      resultItemList.push(resultItem);
-      continue;
-    }
-
-    let taskList: DockerApiServicePsItem[] | null = null;
-    try {
-      taskList = await dockerApiServicePs(serviceItem.Name, [
-        {
-          key: 'desired-state',
-          value: 'Running', // Только АКТИВНЫЕ таски
-        },
-      ]);
-    } catch (err) {
-      logError('dockerBackupServiceList.serviceItem.dockerApiServicePs.ERR', err, {
-        serviceItem,
-      });
-    }
-    if (taskList === null || taskList.length === 0) {
-      const messageJson = logWarn('dockerBackupServiceList.serviceItem.taskList.NULL_OR_EMPTY', {
-        serviceItem,
-      });
-      resultItem.isFailed = true;
-      resultItem.messageJson = messageJson;
-      resultItemList.push(resultItem);
-      continue;
-    }
-
-    const lockTimeoutObj = lockGetTimeoutBackupService({
-      execTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_TIMEOUT,
-      stopTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_STOP_TIMEOUT,
-      volumeListUploadTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_VOLUME_LIST_UPLOAD_TIMEOUT,
-      startTimeout: getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_START_TIMEOUT,
-      taskCount: taskList.length,
-    });
-    const lockKey = nameLock(serviceItem.Name);
-
-    const logData = {
-      lockKey,
-      lockTimeoutObj,
-      serviceItem,
-      inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
-      taskList,
-    };
-    logInfo('dockerBackupServiceList.serviceItem.lock.INIT', logData);
-    await lockResource
-      .acquire(
-        lockKey,
-        async () => {
-          logInfo('dockerBackupServiceList.serviceItem.lock.OK', logData);
-          const helpServiceCompleteResultList = await dockerBackupServiceItem(
-            serviceItem,
-            inspectServiceInfo!,
-            taskList!
-          );
-          if (helpServiceCompleteResultList.length > 0) {
-            for (const helpService of helpServiceCompleteResultList) {
-              if (resultItem.isFailed === false && helpService.isFailed === true) {
-                resultItem.isFailed = true;
-              }
-              resultItem.helpServiceCompleteList.push(helpService);
-            }
-          } else {
-            resultItem.isFailed = true;
-            resultItem.messageString = 'helpServiceCompleteResultList.EMPTY';
-          }
-          resultItemList.push(resultItem);
-          logInfo('dockerBackupServiceList.serviceItem.OK', logData);
-
-          await dockerCheckAndRmHelpServicesForService(serviceItem.Name).catch((err) => {
-            logError('dockerBackupServiceList.serviceItem.dockerCheckAndRmHelpServicesForService.ERR', err, logData);
-          });
-        },
-        {
-          maxExecutionTime: lockTimeoutObj.maxExecutionTime,
-          maxOccupationTime: lockTimeoutObj.maxOccupationTime,
-        }
-      )
-      .catch((err) => {
-        logError('dockerBackupServiceList.serviceItem.ERR', err, logData);
-        const messageJson = logError('dockerBackupServiceList.serviceItem.ERR', err, logData);
-        resultItem.isFailed = true;
-        resultItem.messageJson = messageJson;
-        resultItemList.push(resultItem);
-      });
-  }
-  logInfo('dockerBackupServiceList.RESULT_LIST', {
-    resultItemList,
-  });
-  return resultItemList;
-}
-
-async function dockerBackupServiceItem(
-  serviceItem: DockerApiServiceLsItem,
-  inspectServiceInfo: DockerApiInspectServiceItem,
-  taskList: DockerApiServicePsItem[]
-) {
+export async function dockerBackupServiceItem(params: DockerBackupServiceItemParams) {
   const logData = {
-    serviceItem,
-    inspectServiceInfo: maskInspectServiceItem(inspectServiceInfo),
+    ...params,
+    inspectServiceInfo: maskInspectServiceItem(params.inspectServiceInfo),
   };
   logInfo('dockerBackupServiceItem.INIT', logData);
 
   // Проверка и удаление всех сервисов + ThrowError
-  await dockerCheckAndRmHelpServicesForService(serviceItem.Name);
+  await dockerCheckAndRmHelpServicesForService(params.serviceItem.Name);
 
   const helpServiceCompleteResultList: DockerHelpServiceCompleteRes[] = [];
 
@@ -176,14 +49,14 @@ async function dockerBackupServiceItem(
   //---------
 
   // Replicas: '1/1'
-  const isReplicated = serviceItem.Mode === 'replicated';
-  const currentDesiredReplicas = isReplicated ? Number(serviceItem.Replicas.split('/')[1]) : null;
+  const isReplicated = params.serviceItem.Mode === 'replicated';
+  const currentDesiredReplicas = isReplicated ? Number(params.serviceItem.Replicas.split('/')[1]) : null;
 
   // NodeId=volume1,volume2,volume3,...
   const nodeVolumeListMap = new Map<string, Set<string>>();
 
   //volume-list-upload, collect
-  const volumeListUploadLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+  const volumeListUploadLabelObj = Object.entries(params.inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.volume-list-upload' && el[1].length > 0;
   });
   logInfo('dockerBackupServiceItem.prepareZone.volumeList.INIT', {
@@ -192,9 +65,9 @@ async function dockerBackupServiceItem(
   });
   if (volumeListUploadLabelObj) {
     const volumeList = volumeListUploadLabelObj[1].split(',');
-    for (const taskItem of taskList) {
+    for (const taskItem of params.taskList) {
       const logData = {
-        serviceItem,
+        serviceItem: params.serviceItem,
         taskItem,
       };
       let taskInspect: DockerApiInspectTaskItem | null = null;
@@ -229,10 +102,10 @@ async function dockerBackupServiceItem(
   //---------
   // EXEC
   //---------
-  const execLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+  const execLabelObj = Object.entries(params.inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.exec' && el[1].length > 0;
   });
-  const execShellLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+  const execShellLabelObj = Object.entries(params.inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.exec.shell' && el[1].length > 0;
   });
   logInfo('dockerBackupServiceItem.exec.execLabelObj.INIT', {
@@ -241,7 +114,7 @@ async function dockerBackupServiceItem(
     execShellLabelObj,
   });
   if (execLabelObj) {
-    for (const taskItem of taskList) {
+    for (const taskItem of params.taskList) {
       const logData2 = {
         ...logData,
         execLabelObj,
@@ -251,7 +124,7 @@ async function dockerBackupServiceItem(
         logInfo('dockerBackupServiceItem.taskItem.exec.INIT', logData2);
         // Непосредственно EXEC
         const helpServiceCompleteResult = await dockerBackupServiceExec({
-          serviceItem,
+          serviceItem: params.serviceItem,
           taskItem,
           execCommand: execLabelObj[1],
           execShell: execShellLabelObj ? execShellLabelObj[1] : getProcessEnv().SWARM_UTILS_BACKUP_SERVICE_EXEC_SHELL,
@@ -267,7 +140,7 @@ async function dockerBackupServiceItem(
   //---------
   // STOP
   //---------
-  const stopLabelObj = Object.entries(inspectServiceInfo.Spec.Labels).find((el) => {
+  const stopLabelObj = Object.entries(params.inspectServiceInfo.Spec.Labels).find((el) => {
     return el[0] === 'swarm-utils.backup.stop' && el[1] === 'true';
   });
   logInfo('dockerBackupServiceItem.stop.stopLabelObj.INIT', {
@@ -285,7 +158,7 @@ async function dockerBackupServiceItem(
       logInfo('dockerBackupServiceItem.stop.INIT', logData2);
       // Непосредственно STOP
       const helpServiceCompleteResult = await dockerBackupServiceStop({
-        serviceItem,
+        serviceItem: params.serviceItem,
       });
       helpServiceCompleteResultList.push(helpServiceCompleteResult);
       logInfo('dockerBackupServiceItem.stop.OK', logData2);
@@ -298,7 +171,7 @@ async function dockerBackupServiceItem(
   // UPLOAD
   //---------
   if (nodeVolumeListMap.size > 0) {
-    const s3Params = authGetS3Params(inspectServiceInfo.Spec.Labels, 'swarm-utils.backup.volume-list-upload');
+    const s3Params = authGetS3Params(params.inspectServiceInfo.Spec.Labels, 'swarm-utils.backup.volume-list-upload');
     if (s3Params === null) {
       throwErrorSimple('dockerBackupServiceItem.s3Params.NULL', logData);
     }
@@ -313,7 +186,7 @@ async function dockerBackupServiceItem(
         logInfo('dockerBackupServiceItem.nodeId.upload.INIT', logData2);
         // Непосредственно UPLOAD
         const helpServiceCompleteResult = await dockerBackupServiceUploadVolumeList({
-          serviceItem,
+          serviceItem: params.serviceItem,
           nodeId,
           volumeList: [...volumeSet],
           s3Params,
@@ -340,7 +213,7 @@ async function dockerBackupServiceItem(
       logInfo('dockerBackupServiceItem.start.INIT', logData2);
       // Непосредственно START
       const helpServiceCompleteResult = await dockerBackupServiceStart({
-        serviceItem,
+        serviceItem: params.serviceItem,
         replicasCount: currentDesiredReplicas,
       });
       helpServiceCompleteResultList.push(helpServiceCompleteResult);

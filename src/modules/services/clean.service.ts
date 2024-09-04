@@ -1,11 +1,11 @@
+import { dockerCleanNodeList } from 'src/utils/actions/clean-node/clean-node-list';
+import { dockerCleanServiceList } from 'src/utils/actions/clean-service/clean-service-list';
 import {
   dockerApiNodeLs,
   DockerApiNodeLsFilter,
   dockerApiServiceLs,
   DockerApiServiceLsFilter,
 } from 'src/utils/docker/utils-docker-api';
-import { dockerCleanNodeList } from 'src/utils/docker/utils-docker-clean-node';
-import { dockerCleanServiceList } from 'src/utils/docker/utils-docker-clean-service';
 import { authIsTokenAdmin } from 'src/utils/utils-auth';
 import { throwErrorSimple } from 'src/utils/utils-error';
 

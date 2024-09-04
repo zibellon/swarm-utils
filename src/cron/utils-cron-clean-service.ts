@@ -1,5 +1,5 @@
+import { dockerCleanServiceList } from 'src/utils/actions/clean-service/clean-service-list';
 import { dockerApiServiceLs } from 'src/utils/docker/utils-docker-api';
-import { dockerCleanServiceList } from 'src/utils/docker/utils-docker-clean-service';
 import { logInfo } from 'src/utils/utils-logger';
 
 export async function cronCleanServiceList(dateCron: Date) {
