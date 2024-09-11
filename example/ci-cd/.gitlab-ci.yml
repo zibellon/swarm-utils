@@ -21,14 +21,14 @@ deploy:
   interruptible: true
   script:
     - |
-      docker rm -f swarm-utils_ci_update-service_some-shop-back_dev
+      docker rm -f swarm_utils-ci-update_service-some-shop-back_master
       docker run -i --rm \
         -e TOKEN=dddfff123 \
         -e SERVICE_NAME=some-shop-back_master \
         -e IMAGE=$CI_REGISTRY_IMAGE:latest \
         --network=swarm-utils-overlay-net \
         --entrypoint "/bin/sh" \
-        --name swarm-utils_ci_update-service_some-shop-back_master \
+        --name swarm_utils-ci-update_service-some-shop-back_master \
         alpine:latest -c \
         'apk add curl && \
           curl -v --fail-with-body -X POST \
