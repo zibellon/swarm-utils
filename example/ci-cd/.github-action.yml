@@ -8,6 +8,8 @@ env:
   REGISTRY_URL: registry.domain.com
   REGISTRY_USER: registry_user
   REGISTRY_PASS: some_secret_password
+  SERVICE_NAME: some-shop-back_master
+  SWARM_UTILS_UPDATE_TOKEN: super_secret_token
 
 jobs:
   #########
@@ -32,17 +34,17 @@ jobs:
     steps:
       - name: Deploy
         run: |
-          docker rm -f swarm_utils-ci-update_service-some-shop-back_master
+          docker rm -f swarm_utils-ci-update_service-$SERVICE_NAME
           docker run -i --rm \
-            -e TOKEN=dddfff123 \
-            -e SERVICE_NAME=some-shop-back_master \
-            -e IMAGE=$CI_REGISTRY_IMAGE:latest \
-            --network=swarm-utils-overlay-net \
-            --entrypoint "/bin/sh" \
-            --name swarm_utils-ci-update_service-some-shop-back_master \
-            alpine:latest -c \
-            'apk add curl && \
-              curl -v --fail-with-body -X POST \
-              -H "Content-Type: application/json" \
-              -d "{\"token\":\"$TOKEN\",\"serviceName\":\"$SERVICE_NAME\",\"image\":\"$IMAGE\",\"isForce\":true}" \
-              http://swarm-utils:3000/api/update/service'
+              -e TOKEN=$SWARM_UTILS_UPDATE_TOKEN \
+              -e SERVICE_NAME=$SERVICE_NAME \
+              -e IMAGE=$IMAGE_NAME:latest \
+              --network=swarm-utils-overlay-net \
+              --entrypoint "/bin/sh" \
+              --name swarm_utils-ci-update_service-$SERVICE_NAME \
+              alpine:latest -c \
+                  'apk add curl && \
+                  curl -v --fail-with-body -X POST \
+                  -H "Content-Type: application/json" \
+                  -d "{\"token\":\"$TOKEN\",\"serviceName\":\"$SERVICE_NAME\",\"image\":\"$IMAGE\",\"isForce\":true}" \
+                  http://swarm-utils:3000/api/update/service'
