@@ -388,3 +388,11 @@
     3.  Выполнить команду docker service logs XXX -> не получится, работает на сервисы с log-driver=json-file/journald
     4.  А при перезапуске - контейнер упал ...
     5.  В логах команды docker service update будет только: `service update paused: update paused due to failure or early termination of task TASK_ID`
+15. Функционал, обновления версий контейнеров
+16. Отдельный сервис (Контейнер) - для обновление сервисов. Вызов команды /service/update
+17. Отдельный сервис для PUSH собранный образов в registry ?
+    1.  Через docker info --format json - можно получить Swarm.NodeID
+    2.  Swarm: {"NodeID":"gw97a8q5pfqsfqhncmj987qc2","NodeAddr":"185.224.248.118","LocalNodeState":"active","ControlAvailable":false,"Error":"","RemoteManagers":[{"NodeID":"cxfiamgp1mwxqcjzvbl6jd7ox","Addr":"185.224.248.76:2377"}]}
+    3.  Произвести сборку на этой Node
+    4.  После - обратиться в swarm-utils и попросить его запушить в registry ?
+    5.  
