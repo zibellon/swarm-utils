@@ -21,7 +21,7 @@ deploy:
   interruptible: true
   script:
     - |
-      docker rm -f swarm-utils_ci_update_some-shop-back_dev
+      docker rm -f swarm-utils_ci_update-service_some-shop-back_dev
       docker run -i --rm \
         -e TOKEN=dddfff123 \
         -e SERVICE_NAME=some-shop-back_master \
