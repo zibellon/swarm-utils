@@ -395,4 +395,7 @@
     2.  Swarm: {"NodeID":"gw97a8q5pfqsfqhncmj987qc2","NodeAddr":"185.224.248.118","LocalNodeState":"active","ControlAvailable":false,"Error":"","RemoteManagers":[{"NodeID":"cxfiamgp1mwxqcjzvbl6jd7ox","Addr":"185.224.248.76:2377"}]}
     3.  Произвести сборку на этой Node
     4.  После - обратиться в swarm-utils и попросить его запушить в registry ?
-    5.  
+18. Получить список неиспользуемых volumes
+    1.  Получить список node
+    2.  на каждой node - получить список volumes
+    3.  проверить - что они `unused`
