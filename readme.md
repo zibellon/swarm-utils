@@ -399,3 +399,6 @@
     1.  Получить список node
     2.  на каждой node - получить список volumes
     3.  проверить - что они `unused`
+19. Добавить возможность указать адрес docker.sock
+    1.  На примере с Traefik + HA-proxy + WorkerNode
+    2.  Можно поднять HA-proxy на ManagerNode и открыть доступ к docker.sock через TCP
