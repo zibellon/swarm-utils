@@ -402,3 +402,6 @@
 19. Добавить возможность указать адрес docker.sock
     1.  На примере с Traefik + HA-proxy + WorkerNode
     2.  Можно поднять HA-proxy на ManagerNode и открыть доступ к docker.sock через TCP
+20. multi-tenant
+    1.  В одном swarm cluster - может быть запущено НЕСКОЛЬКО swarm-utils
+    2.  Учесть проблему с CRON. Там нет выборки по токен - там используются ВСЕ и СРАЗУ
