@@ -98,9 +98,15 @@ const isEmptyObj = (obj: any) => {
 const circularReplacer = () => {
   const seen = new WeakSet();
   return (_key: any, value: any) => {
+    if (typeof value === 'bigint' && value !== null) {
+      return { $bigint$: value.toString() };
+    }
     if (typeof value === 'object' && value !== null) {
       if (seen.has(value)) return undefined;
       seen.add(value);
+    }
+    if (typeof value === 'object' && value !== null && value.type === 'Buffer' && Array.isArray(value.data)) {
+      return { type: 'BufferJSON', dataLen: value.data.length };
     }
     return value;
   };
